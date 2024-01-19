@@ -1,11 +1,14 @@
 package main
 
 import (
-	"github.com/IUnlimit/perpetua/cmd/perpetua"
-	"github.com/IUnlimit/perpetua/internal/logger"
+	perp "github.com/IUnlimit/perpetua/cmd/perpetua"
+	"github.com/IUnlimit/perpetua/internal/conf"
 )
 
 func main() {
-	logger.Init()
-	perpetua.Login()
+	conf.Init()
+	perp.Init()
+	perp.Login()
+	perp.Start()
+
 }

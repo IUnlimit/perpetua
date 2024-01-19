@@ -2,8 +2,8 @@ package model
 
 import "time"
 
-type Workflow struct {
-	TotalCount   int            `json:"total_count"`
+type WorkflowAction struct {
+	TotalCount   int64          `json:"total_count"`
 	WorkflowRuns []*WorkflowRun `json:"workflow_runs"`
 }
 
@@ -15,7 +15,7 @@ type WorkflowRun struct {
 	DisplayTitle string    `json:"display_title"`
 	Status       string    `json:"status"`
 	Conclusion   string    `json:"conclusion"`
-	WorkflowID   int       `json:"workflow_id"`
+	WorkflowID   int64     `json:"workflow_id"`
 	URL          string    `json:"url"`
 	HTMLURL      string    `json:"html_url"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -24,16 +24,16 @@ type WorkflowRun struct {
 	ArtifactsURL string    `json:"artifacts_url"`
 }
 
-type Artifact struct {
-	TotalCount int         `json:"total_count"`
-	Artifacts  []Artifacts `json:"artifacts"`
+type ArtifactAction struct {
+	TotalCount int64       `json:"total_count"`
+	Artifacts  []*Artifact `json:"artifacts"`
 }
 
-type Artifacts struct {
-	ID                 int       `json:"id"`
+type Artifact struct {
+	ID                 int64     `json:"id"`
 	NodeID             string    `json:"node_id"`
 	Name               string    `json:"name"`
-	SizeInBytes        int       `json:"size_in_bytes"`
+	SizeInBytes        int64     `json:"size_in_bytes"`
 	URL                string    `json:"url"`
 	ArchiveDownloadURL string    `json:"archive_download_url"`
 	Expired            bool      `json:"expired"`
