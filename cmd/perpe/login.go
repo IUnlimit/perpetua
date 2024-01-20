@@ -174,5 +174,3 @@ func updateNTQQImpl(owner string, repo string, zipPath string, lgrFolder string,
 	conf.UpdateConfig(artifact)
 	return nil
 }
-
-
