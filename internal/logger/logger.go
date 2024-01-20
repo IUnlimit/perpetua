@@ -24,6 +24,8 @@ type LogHook struct {
 	writer    io.Writer        // io
 }
 
+var Hook *LogHook
+
 // Levels ref: logrus/hooks.go impl Hook interface
 func (hook *LogHook) Levels() []logrus.Level {
 	if len(hook.levels) == 0 {
@@ -129,6 +131,18 @@ func (hook *LogHook) SetFormatter(consoleFormatter, fileFormatter logrus.Formatt
 	hook.formatter = fileFormatter
 }
 
+func (hook *LogHook) ExecLogWrite(s string) error {
+	fmt.Print(s)
+	err := hook.ioWrite(&logrus.Entry{
+		Level:   logrus.InfoLevel,
+		Message: s,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 const (
 	colorCodePanic = "\x1b[1;31m" // color.Style{color.Bold, color.Red}.String()
 	colorCodeFatal = "\x1b[1;31m" // color.Style{color.Bold, color.Red}.String()
@@ -153,13 +167,17 @@ func (f LogFormat) Format(entry *logrus.Entry) ([]byte, error) {
 		_, _ = buf.WriteString(GetLogLevelColorCode(entry.Level))
 	}
 
-	_ = buf.WriteByte('[')
-	_, _ = buf.WriteString(entry.Time.Format("2006-01-02 15:04:05"))
-	_, _ = buf.WriteString("] [")
-	_, _ = buf.WriteString(strings.ToUpper(entry.Level.String()))
-	_, _ = buf.WriteString("]: ")
-	_, _ = buf.WriteString(entry.Message)
-	_, _ = buf.WriteString(" \n")
+	if entry.Logger == nil {
+		_, _ = buf.WriteString(entry.Message)
+	} else {
+		_ = buf.WriteByte('[')
+		_, _ = buf.WriteString(entry.Time.Format("2006-01-02 15:04:05"))
+		_, _ = buf.WriteString("] [")
+		_, _ = buf.WriteString(strings.ToUpper(entry.Level.String()))
+		_, _ = buf.WriteString("]: ")
+		_, _ = buf.WriteString(entry.Message)
+		_, _ = buf.WriteString(" \n")
+	}
 
 	if f.EnableColor {
 		_, _ = buf.WriteString(colorReset)

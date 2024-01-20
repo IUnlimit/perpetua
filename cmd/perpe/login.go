@@ -1,15 +1,16 @@
 package perp
 
 import (
-	"errors"
 	"fmt"
 	"github.com/IUnlimit/perpetua/internal/conf"
 	"github.com/IUnlimit/perpetua/internal/hook"
+	"github.com/IUnlimit/perpetua/internal/logger"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"os"
-	"regexp"
+	"os/exec"
 )
 
 func Login() {
@@ -22,17 +23,86 @@ func Login() {
 		log.Fatalf("Lagrange.OneBot init error %v", err)
 	}
 
-	exists := utils.FileExists("appsettings.json")
+	fileFolder := config.ParentPath + "/"
+	exists := utils.FileExists(fileFolder + "appsettings.json")
 	if !exists {
 		log.Warn("Can't find `appsettings.json`, generating default configuration (See https://github.com/LagrangeDev/Lagrange.Core?tab=readme-ov-file#appsettingsjson-example)")
-		err = conf.UpdateLgrConfig()
+		err = conf.UpdateLgrConfig(fileFolder)
 		if err != nil {
 			log.Fatalf("Failed to update lgr config %v", err)
 		}
 		log.Info("Default configuration has been generated, please configure and restart perpetua")
 		os.Exit(0)
 	}
+}
 
+func Start() {
+	log.Info("Lagrange.OneBot starting ...")
+	err := runExec()
+	if err != nil {
+		log.Fatalf("file instance create failed %v", err)
+	}
+	log.Info("Lagrange.OneBot start success")
+}
+
+func runExec() error {
+	execName := "Lagrange.OneBot"
+	windows := utils.IsWinPlatform()
+	if windows {
+		execName += ".exe"
+	}
+	cmdDir := conf.Config.ParentPath
+	execPath := conf.LgrFolder + execName
+
+	var cmd *exec.Cmd
+	if windows {
+		// TODO
+		cmd = nil
+	} else { // unix
+		cmd = exec.Command(execPath)
+	}
+
+	cmd.Dir = cmdDir
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	// 将错误输出与标准输出连接至同一管道
+	cmd.Stderr = cmd.Stdout
+	in, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	// 将命令行输入复制到 stdin 管道中
+	go func() {
+		_, err := io.Copy(in, os.Stdin)
+		if err != nil {
+			log.Fatalf("Failed to copy stdin %v", err)
+		}
+	}()
+
+	if err = cmd.Start(); err != nil {
+		return err
+	}
+
+	var n int
+	hook := logger.Hook
+	bytes := make([]byte, 8*1024)
+	for {
+		n, err = out.Read(bytes)
+		if err != nil {
+			break
+		}
+		err = hook.ExecLogWrite(string(bytes[:n]))
+		if err != nil {
+			log.Warnf("Write exec log error: %v", err)
+		}
+	}
+
+	if err = cmd.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func initLagrange(lgrFolder string, config *model.Config) error {
@@ -101,27 +171,8 @@ func updateNTQQImpl(owner string, repo string, zipPath string, lgrFolder string,
 
 	exists = utils.FileExists(lgrFolder + "Lagrange.OneBot.pdb")
 	callback(exists)
-	updateConfig(artifact)
+	conf.UpdateConfig(artifact)
 	return nil
 }
 
-func updateConfig(artifact *model.Artifact) error {
-	platform := ""
 
-	regx := regexp.MustCompile(`_(\w+)-`)
-	match := regx.FindStringSubmatch(artifact.Name)
-	if len(match) > 1 {
-		platform = match[1]
-	} else {
-		return errors.New("can't match platform, artifact name: " + artifact.Name)
-	}
-
-	conf.Config.NTQQImpl = &model.NTQQImpl{
-		ID:        artifact.ID,
-		Platform:  platform,
-		UpdatedAt: artifact.UpdatedAt,
-	}
-
-	// TODO record
-	return nil
-}

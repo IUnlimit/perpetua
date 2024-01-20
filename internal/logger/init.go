@@ -30,5 +30,6 @@ func initLog() {
 
 	consoleFormatter := LogFormat{EnableColor: config.LogColorful}
 	fileFormatter := LogFormat{EnableColor: false}
-	log.AddHook(NewLocalHook(w, consoleFormatter, fileFormatter, GetLogLevel(config.LogLevel)...))
+	Hook = NewLocalHook(w, consoleFormatter, fileFormatter, GetLogLevel(config.LogLevel)...)
+	log.AddHook(Hook)
 }
