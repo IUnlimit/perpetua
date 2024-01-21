@@ -9,10 +9,19 @@ ______   _________________   _____/  |_ __ _______
 |__|        \/      |__|        \/                \/ 
 ```
 <p align="center">
-    Based on Lagrange.OneBot, it provides additional distributed support, including http request proxy and port forwarding, and may include additional API interfaces in the future. Uses NTQQ protocol and onebot v11 standard.
+    本项目为OneBot协议下机器人实例与用户服务间第三方中间件。基于NTQQ实现，提供了额外的分布式支持，包括WebSocket代理与请求分配，并提供额外的API接口
+</p>
+
+<p align="center">
+    <a alt="Protocol" href="https://github.com/botuniverse/onebot-11"><image src="https://img.shields.io/badge/OneBot-v11-green"></image></a>
+    <a alt="NTQQ" href="https://github.com/LagrangeDev/Lagrange.Core"><image src="https://img.shields.io/badge/Lagrange-OneBot-blue"></image></a>
 </p>
 
 <p align="center">
    <a alt="License" href="https://www.gnu.org/licenses/agpl-3.0.en.html"><image src="https://img.shields.io/badge/license-AGPLv3-4EB1BA.svg"></image></a>
    <a alt="Release" href="https://github.com/IUnlimit/lagrange-go-distributed/releases"><image src="https://img.shields.io/github/release/IUnlimit/lagrange-go-distributed.svg"></image></a>
+</p>
+
+<p align="center">
+   <a href="https://iunlimit.github.io/perpetua/">Document</a>
 </p>
