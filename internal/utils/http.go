@@ -2,6 +2,9 @@ package utils
 
 import (
 	"encoding/json"
+	"github.com/IUnlimit/perpetua/internal/erren"
+	"github.com/IUnlimit/perpetua/internal/model"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -104,4 +107,29 @@ func download(resp *http.Response, filePath string, fileSize int64) error {
 
 	defer bar.Finish()
 	return nil
+}
+
+// BadResponse Return error status code and error message
+func BadResponse(c *gin.Context, err error) {
+	Err := erren.ConvertErr(err)
+	c.JSON(http.StatusOK, model.Response{
+		Status:  "failed",
+		RetCode: Err.ErrCode,
+		Msg:     Err.ErrMsg,
+	})
+}
+
+// SendResponse Try to return data
+func SendResponse(c *gin.Context, data any) {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		BadResponse(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, model.Response{
+		Status:  "ok",
+		RetCode: 0,
+		Data:    string(bytes),
+	})
 }

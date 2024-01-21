@@ -143,6 +143,10 @@ func (hook *LogHook) ExecLogWrite(s string) error {
 	return nil
 }
 
+func (hook *LogHook) GetWriter() io.Writer {
+	return hook.writer
+}
+
 const (
 	colorCodePanic = "\x1b[1;31m" // color.Style{color.Bold, color.Red}.String()
 	colorCodeFatal = "\x1b[1;31m" // color.Style{color.Bold, color.Red}.String()

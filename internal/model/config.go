@@ -3,12 +3,18 @@ package model
 import "time"
 
 type Config struct {
-	NTQQImpl    *NTQQImpl
-	ParentPath  string
-	LogAging    time.Duration
+	Log        *Log
+	NTQQImpl   *NTQQImpl
+	Http       *Http
+	WebSocket  *WebSocket
+	ParentPath string
+}
+
+type Log struct {
 	LogForceNew bool
-	LogColorful bool
 	LogLevel    string
+	LogAging    time.Duration
+	LogColorful bool
 }
 
 type NTQQImpl struct {
@@ -16,4 +22,12 @@ type NTQQImpl struct {
 	ID        int64
 	Platform  string
 	UpdatedAt time.Time
+}
+
+type Http struct {
+	Port int
+}
+
+type WebSocket struct {
+	Timeout time.Duration
 }

@@ -15,14 +15,22 @@ var Config *model.Config
 
 func Init() {
 	Config = &model.Config{
-		ParentPath:  "perpetua/",
-		LogAging:    time.Hour * 24,
-		LogForceNew: false,
-		LogColorful: true,
-		LogLevel:    "info",
+		Log: &model.Log{
+			LogAging:    time.Hour * 24,
+			LogForceNew: false,
+			LogColorful: true,
+			LogLevel:    "debug",
+		},
 		NTQQImpl: &model.NTQQImpl{
 			Update: false,
 		},
+		Http: &model.Http{
+			Port: 8080,
+		},
+		WebSocket: &model.WebSocket{
+			Timeout: 10 * time.Second,
+		},
+		ParentPath: "perpetua/",
 	}
 }
 

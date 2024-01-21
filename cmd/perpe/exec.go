@@ -13,7 +13,8 @@ import (
 	"os/exec"
 )
 
-func Login() {
+// Configure NTQQ settings using config.yml
+func Configure() {
 	config := conf.Config
 	lgrFolder := config.ParentPath + "/" + conf.LgrFolder
 
@@ -36,6 +37,7 @@ func Login() {
 	}
 }
 
+// Start the exec file
 func Start() {
 	log.Info("Lagrange.OneBot starting ...")
 	err := runExec()

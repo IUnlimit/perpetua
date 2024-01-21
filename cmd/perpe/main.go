@@ -1,7 +1,7 @@
 package perp
 
 func Bootstrap() {
-	Login()
-	//go Start()
+	Configure()
+	go Start()
 	EnableAgent()
 }

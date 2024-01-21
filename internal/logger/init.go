@@ -17,8 +17,8 @@ func initLog() {
 	rotateOptions := []rotatelogs.Option{
 		rotatelogs.WithRotationTime(time.Hour * 24),
 	}
-	rotateOptions = append(rotateOptions, rotatelogs.WithMaxAge(config.LogAging))
-	if config.LogForceNew {
+	rotateOptions = append(rotateOptions, rotatelogs.WithMaxAge(config.Log.LogAging))
+	if config.Log.LogForceNew {
 		rotateOptions = append(rotateOptions, rotatelogs.ForceNewFile())
 	}
 
@@ -28,8 +28,8 @@ func initLog() {
 		panic(err)
 	}
 
-	consoleFormatter := LogFormat{EnableColor: config.LogColorful}
+	consoleFormatter := LogFormat{EnableColor: config.Log.LogColorful}
 	fileFormatter := LogFormat{EnableColor: false}
-	Hook = NewLocalHook(w, consoleFormatter, fileFormatter, GetLogLevel(config.LogLevel)...)
+	Hook = NewLocalHook(w, consoleFormatter, fileFormatter, GetLogLevel(config.Log.LogLevel)...)
 	log.AddHook(Hook)
 }

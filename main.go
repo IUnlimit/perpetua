@@ -13,7 +13,9 @@ func main() {
 	conf.Init()
 	hook.Init()
 	logger.Init()
-	perp.Bootstrap()
+	//perp.Bootstrap()
+	perp.EnableAgent()
+
 }
 
 func printBanner() {
