@@ -3,31 +3,32 @@ package model
 import "time"
 
 type Config struct {
-	Log        *Log
-	NTQQImpl   *NTQQImpl
-	Http       *Http
-	WebSocket  *WebSocket
-	ParentPath string
+	Log           *Log          `json:"log"`
+	NTQQImpl      *NTQQImpl     `json:"ntqq-impl"`
+	Http          *Http         `json:"http"`
+	WebSocket     *WebSocket    `json:"web-socket"`
+	ParentPath    string        `json:"parent-path"`
+	MsgExpireTime time.Duration `json:"msg-expire-time"`
 }
 
 type Log struct {
-	LogForceNew bool
-	LogLevel    string
-	LogAging    time.Duration
-	LogColorful bool
+	ForceNew bool          `json:"force-new,omitempty"`
+	Level    string        `json:"level,omitempty"`
+	Aging    time.Duration `json:"aging,omitempty"`
+	Colorful bool          `json:"colorful,omitempty"`
 }
 
 type NTQQImpl struct {
-	Update    bool
-	ID        int64
-	Platform  string
-	UpdatedAt time.Time
+	Update    bool      `json:"update,omitempty"`
+	ID        int64     `json:"id,omitempty"`
+	Platform  string    `json:"platform,omitempty"`
+	UpdatedAt time.Time `json:"updated-at"`
 }
 
 type Http struct {
-	Port int
+	Port int `json:"port,omitempty"`
 }
 
 type WebSocket struct {
-	Timeout time.Duration
+	Timeout time.Duration `json:"timeout,omitempty"`
 }
