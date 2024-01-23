@@ -37,7 +37,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           IS_PR: ${{ !!github.head_ref }}
           BINARY_NAME: ${{ env.BINARY_PREFIX }}${{ matrix.goos }}_${{ matrix.goarch }}${{ env.BINARY_SUFFIX }}
-          LD_FLAGS: "-w -s -X github.com/IUnlimit/perpetua/internal/conf.Version=${{ env.COMMIT_ID::7 }}"
+          LD_FLAGS: "-w -s -X github.com/IUnlimit/perpetua/internal/conf.Version=${{ env.COMMIT_ID }}"
         run: |
           if [ $GOOS = "windows" ]; then export BINARY_SUFFIX="$BINARY_SUFFIX.exe"; fi
           if $IS_PR ; then echo $PR_PROMPT; fi
