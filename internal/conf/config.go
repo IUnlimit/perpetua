@@ -1,52 +1,43 @@
 package conf
 
 import (
+	"embed"
+	"encoding/json"
 	"errors"
-	"github.com/IUnlimit/perpetua/configs"
+	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
+	log "github.com/sirupsen/logrus"
+	"os"
 	"regexp"
-	"time"
 )
 
-const LgrFolder = "Lagrange.OneBot/"
-
-var Config *model.Config
-
-func Init() {
-	Config = &model.Config{
-		Log: &model.Log{
-			LogAging:    time.Hour * 24,
-			LogForceNew: false,
-			LogColorful: true,
-			LogLevel:    "debug",
-		},
-		NTQQImpl: &model.NTQQImpl{
-			Update: false,
-		},
-		Http: &model.Http{
-			Port: 8080,
-		},
-		WebSocket: &model.WebSocket{
-			Timeout: 10 * time.Second,
-		},
-		ParentPath: "perpetua/",
+// LoadConfig creat and load config, return exists(file)
+func LoadConfig(fileName string, fileFolder string, fs embed.FS, config any) (bool, error) {
+	filePath := fileFolder + fileName
+	exists := utils.FileExists(filePath)
+	if !exists {
+		log.Warnf("Can't find `%s`, generating default configuration", fileName)
+		data, err := fs.ReadFile(fileName)
+		if err != nil {
+			return false, err
+		}
+		err = utils.CreateFile(filePath, data)
+		if err != nil {
+			return false, err
+		}
 	}
-}
 
-// UpdateLgrConfig update appsettings.json
-func UpdateLgrConfig(fileFolder string) error {
-	fileName := "appsettings.json"
-	data, err := configs.AppSettings.ReadFile(fileName)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return err
+		return exists, err
 	}
 
-	err = utils.CreateFile(fileFolder+fileName, data)
+	err = json.Unmarshal(data, config)
 	if err != nil {
-		return err
+		return exists, err
 	}
-	return nil
+	return exists, nil
 }
 
 // UpdateConfig update config.yml
@@ -61,7 +52,7 @@ func UpdateConfig(artifact *model.Artifact) error {
 		return errors.New("can't match platform, artifact name: " + artifact.Name)
 	}
 
-	Config.NTQQImpl = &model.NTQQImpl{
+	global.Config.NTQQImpl = &model.NTQQImpl{
 		ID:        artifact.ID,
 		Platform:  platform,
 		UpdatedAt: artifact.UpdatedAt,

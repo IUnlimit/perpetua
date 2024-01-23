@@ -1,0 +1,44 @@
+#	                                    __
+#	______   _________________   _____/  |_ __ _______
+#	\____ \_/ __ \_  __ \____ \_/ __ \   __\  |  \__  \
+#	|  |_> >  ___/|  | \/  |_> >  ___/|  | |  |  // __ \_
+#	|   __/ \___  >__|  |   __/ \___  >__| |____/(____  /
+#	|__|        \/      |__|        \/                \/
+#
+# Notice
+#   perpetua 固定连接第一个 ForwardWebSocket 配置项
+
+# 日志项配置
+log:
+  # 是否每次启动新建log文件
+  force-new: false
+  # 日志等级
+  #   trace debug info warn error
+  level: "info"
+  # 日志存活时间，到期新建log文件
+  aging: 24h
+  # 是否开启控制台颜色
+  colorful: true
+
+# 本配置项自动更新，无需手动
+ntqq-impl:
+  update: false
+  id: 0
+  platform: ""
+  updated-at: "0001-01-01T00:00:00Z"
+
+# http 相关配置
+http:
+  # 监听端口
+  port: 8080
+
+# websocket 相关配置
+web-socket:
+  # ws监听最长等待时间
+  timeout: 10s
+
+# 配置文件主目录
+parent-path: "perpetua/"
+
+# 接收消息的最大缓存时间。新建立的ws连接将会被推送所有未过期消息
+msg-expire-time: 0s
