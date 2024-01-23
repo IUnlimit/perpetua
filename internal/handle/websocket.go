@@ -2,8 +2,13 @@ package handle
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/IUnlimit/perpetua/internal/conf"
+	global "github.com/IUnlimit/perpetua/internal"
+	"github.com/IUnlimit/perpetua/internal/model"
+	"github.com/IUnlimit/perpetua/internal/utils"
+	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -17,8 +22,10 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// CreateWSInstance create new ws instance
 func CreateWSInstance(port int) {
 	var start bool
+	ctx := context.Background()
 	handleWebSocket := func(w http.ResponseWriter, r *http.Request) {
 		// upgrade HTTP to WebSocket conn
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -29,24 +36,55 @@ func CreateWSInstance(port int) {
 		defer conn.Close()
 
 		start = true
+		handler := NewHandler(ctx)
+		handleList = append(handleList, handler)
 		log.Info("WebSocket connection established on port: ", port)
-		for {
-			messageType, message, err := conn.ReadMessage()
-			if err != nil {
-				log.Warnf("Failed to read message from WebSocket(port: %d): %v", port, err)
-				break
-			}
 
-			log.Debugf("Received message(type: %d) on port-%d: %s", messageType, port, string(message))
-			// TODO redirect
-			var resp []byte
+		// write goroutine
+		// go pool: /api read and wait to respond
+		// go pool: /event push events
+		gopool.Go(func() {
+			handler.AddWait()
+			for {
+				if handler.ShouldExit() {
+					log.Debugf("Websocket weite goroutine on port %d has exited", port)
+					break
+				}
 
-			err = conn.WriteMessage(messageType, resp)
-			if err != nil {
-				log.Warnf("Failed to write message to WebSocket(port: %d): %v", port, err)
-				break
+				// TODO consume and write to conn
+				//var resp []byte
+				//err = conn.WriteMessage(messageType, resp)
+
+				if err != nil {
+					log.Warnf("Failed to write message to WebSocket(port: %d): %v", port, err)
+					break
+				}
 			}
-		}
+		})
+
+		// read goroutine
+		gopool.Go(func() {
+			handler.AddWait()
+			for {
+				if handler.ShouldExit() {
+					log.Debugf("Websocket read goroutine on port %d has exited", port)
+					break
+				}
+
+				mType, message, err := conn.ReadMessage()
+				if err != nil {
+					log.Warnf("Failed to read message from WebSocket(port: %d): %v", port, err)
+					break
+				}
+
+				// TODO read and write to cache
+
+				log.Debugf("Received message(type: %d) on port-%d: %s", mType, port, string(message))
+			}
+		})
+
+		handler.WaitDone()
+		log.Info("WebSocket connection closed on port: ", port)
 	}
 
 	server := &http.Server{
@@ -54,69 +92,98 @@ func CreateWSInstance(port int) {
 		Handler: http.HandlerFunc(handleWebSocket),
 	}
 
-	config := conf.Config.WebSocket
-	go func() {
+	// wait to connect
+	config := global.Config.WebSocket
+	gopool.Go(func() {
 		timer := time.After(config.Timeout)
 		<-timer
 		if !start {
-			_ = server.Shutdown(context.Background())
+			_ = server.Shutdown(ctx)
 		}
-	}()
+	})
 
-	err := server.ListenAndServe()
+	gopool.Go(func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			log.Warnf("WebSocket connection(port: %d) exit with error: %v", port, err)
+		}
+	})
+}
+
+func CreateNTQQWebSocket() error {
+	impl, err := getForwardImpl()
 	if err != nil {
-		log.Warnf("WebSocket connection(port: %d) exit with error: %v", port, err)
+		return err
+	}
+
+	request, _ := http.NewRequest("GET", "", nil)
+	request.Header.Set("AccessToken", impl.AccessToken)
+	wsUrl := fmt.Sprintf("ws://%s:%d/%s", impl.Host, impl.Port, impl.Suffix)
+
+	log.Info("Start connecting to NTQQ websocket: ", wsUrl)
+	<-waitNTQQStartup(impl.Host, impl.Port)
+	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, request.Header)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	log.Info("NTQQ websocket connection successful")
+	for {
+		// NTQQ读取消息
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Errorf("Failed to read NTQQ message: %v", err)
+			continue
+		}
+
+		log.Debug("Received NTQQ message: ", string(message))
+		var event *model.HeartBeat
+		err = json.Unmarshal(message, &event)
+		if err != nil {
+			log.Errorf("Failed to unmarshal NTQQ message: %s", string(message))
+			continue
+		}
+
+		// heartbeat
+		if event.MetaEventType == "heartbeat" {
+			global.Status = event.HeartBeatStatus
+			continue
+		}
+
+		// event
+		err = globalCache.Append(&event.MetaData, message)
+		if err != nil {
+			log.Errorf("Failed to append global cache: %v", err)
+			continue
+		}
 	}
 }
 
-// 处理 WebSocket 请求
-//func handleWebSocket(w http.ResponseWriter, r *http.Request) {
-//	// 建立 WebSocket 连接
-//	upgrader := websocket.Upgrader{}
-//	conn, err := upgrader.Upgrade(w, r, nil)
-//	if err != nil {
-//		log.Println("Failed to upgrade to WebSocket:", err)
-//		return
-//	}
-//	defer conn.Close()
-//
-//	// 连接到目标 WebSocket 服务器
-//	targetURL := "ws://localhost:8081/ws"
-//	targetConn, _, err := websocket.DefaultDialer.Dial(targetURL, nil)
-//	if err != nil {
-//		log.Println("Failed to connect to target WebSocket server:", err)
-//		return
-//	}
-//	defer targetConn.Close()
-//
-//	// 在两个 WebSocket 连接之间进行转发
-//	for {
-//		// 从客户端读取消息
-//		_, clientMsg, err := conn.ReadMessage()
-//		if err != nil {
-//			log.Println("Failed to read client message:", err)
-//			break
-//		}
-//
-//		// 转发消息到目标 WebSocket 服务器
-//		err = targetConn.WriteMessage(websocket.TextMessage, clientMsg)
-//		if err != nil {
-//			log.Println("Failed to write message to target WebSocket server:", err)
-//			break
-//		}
-//
-//		// 从目标 WebSocket 服务器读取响应
-//		_, targetMsg, err := targetConn.ReadMessage()
-//		if err != nil {
-//			log.Println("Failed to read target server message:", err)
-//			break
-//		}
-//
-//		// 将响应消息发送给客户端
-//		err = conn.WriteMessage(websocket.TextMessage, targetMsg)
-//		if err != nil {
-//			log.Println("Failed to write message to client:", err)
-//			break
-//		}
-//	}
-//}
+func waitNTQQStartup(host string, port int) <-chan struct{} {
+	done := make(chan struct{})
+
+	gopool.Go(func() {
+		for {
+			err := utils.CheckPort(host, port, time.Second*1)
+			if err != nil {
+				log.Debugf("Wait NTQQ startup: %v", err)
+				time.Sleep(time.Millisecond * 500)
+				continue
+			}
+			break
+		}
+		close(done)
+	})
+
+	return done
+}
+
+func getForwardImpl() (*model.Implementation, error) {
+	for _, impl := range global.AppSettings.Implementations {
+		if impl.Type == "ForwardWebSocket" {
+			return impl, nil
+		}
+	}
+	return nil, errors.New("can't find forward websocket impl")
+}

@@ -2,14 +2,17 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/IUnlimit/perpetua/internal/erren"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/cheggaaa/pb/v3"
 )
@@ -84,28 +87,13 @@ func DownloadFileWithHeaders(url string, filePath string, headers map[string]str
 	return nil
 }
 
-func download(resp *http.Response, filePath string, fileSize int64) error {
-	if fileSize == -1 {
-		fileSize = resp.ContentLength
-	}
-	log.Debug("contentLength: %dB", fileSize)
-
-	file, err := os.Create(filePath)
+func CheckPort(host string, port int, timeout time.Duration) error {
+	address := fmt.Sprintf("%s:%d", host, port)
+	conn, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-
-	bar := pb.Full.Start64(fileSize)
-	bar.Set(pb.Bytes, true)
-
-	reader := bar.NewProxyReader(resp.Body)
-	_, err = io.Copy(file, reader)
-	if err != nil {
-		return err
-	}
-
-	defer bar.Finish()
+	defer conn.Close()
 	return nil
 }
 
@@ -132,4 +120,29 @@ func SendResponse(c *gin.Context, data any) {
 		RetCode: 0,
 		Data:    string(bytes),
 	})
+}
+
+func download(resp *http.Response, filePath string, fileSize int64) error {
+	if fileSize == -1 {
+		fileSize = resp.ContentLength
+	}
+	log.Debug("contentLength: %dB", fileSize)
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	bar := pb.Full.Start64(fileSize)
+	bar.Set(pb.Bytes, true)
+
+	reader := bar.NewProxyReader(resp.Body)
+	_, err = io.Copy(file, reader)
+	if err != nil {
+		return err
+	}
+
+	defer bar.Finish()
+	return nil
 }

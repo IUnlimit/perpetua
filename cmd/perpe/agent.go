@@ -1,13 +1,20 @@
 package perp
 
 import (
-	"github.com/IUnlimit/perpetua/internal/conf"
+	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/handle"
+	"github.com/bytedance/gopkg/util/gopool"
+	log "github.com/sirupsen/logrus"
 )
 
 func EnableAgent() {
-	var config = conf.Config.Http
-	go handle.EnableHttpService(config.Port)
+	var config = global.Config.Http
+	gopool.Go(func() {
+		handle.EnableHttpService(config.Port)
+	})
 
-	select {}
+	err := handle.CreateNTQQWebSocket()
+	if err != nil {
+		log.Fatalf("Failed to connect to NTQQ websocket: %v", err)
+	}
 }

@@ -174,11 +174,12 @@ func (f LogFormat) Format(entry *logrus.Entry) ([]byte, error) {
 	if entry.Logger == nil {
 		_, _ = buf.WriteString(entry.Message)
 	} else {
-		_ = buf.WriteByte('[')
-		_, _ = buf.WriteString(entry.Time.Format("2006-01-02 15:04:05"))
-		_, _ = buf.WriteString("] [")
+		_, _ = buf.WriteString("[PERP] [")
 		_, _ = buf.WriteString(strings.ToUpper(entry.Level.String()))
+		_, _ = buf.WriteString("] [")
+		_, _ = buf.WriteString(entry.Time.Format("2006-01-02 15:04:05"))
 		_, _ = buf.WriteString("]: ")
+		// TODO 显示caller行号
 		_, _ = buf.WriteString(entry.Message)
 		_, _ = buf.WriteString(" \n")
 	}

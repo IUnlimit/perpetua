@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"github.com/IUnlimit/perpetua/internal/conf"
+	global "github.com/IUnlimit/perpetua/internal"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	log "github.com/sirupsen/logrus"
 	"path"
@@ -13,12 +13,12 @@ func Init() {
 }
 
 func initLog() {
-	config := conf.Config
+	config := global.Config
 	rotateOptions := []rotatelogs.Option{
 		rotatelogs.WithRotationTime(time.Hour * 24),
 	}
-	rotateOptions = append(rotateOptions, rotatelogs.WithMaxAge(config.Log.LogAging))
-	if config.Log.LogForceNew {
+	rotateOptions = append(rotateOptions, rotatelogs.WithMaxAge(config.Log.Aging))
+	if config.Log.ForceNew {
 		rotateOptions = append(rotateOptions, rotatelogs.ForceNewFile())
 	}
 
@@ -28,8 +28,10 @@ func initLog() {
 		panic(err)
 	}
 
-	consoleFormatter := LogFormat{EnableColor: config.Log.LogColorful}
+	levels := GetLogLevel(config.Log.Level)
+	log.SetLevel(levels[0]) // hook levels doesn't work
+	consoleFormatter := LogFormat{EnableColor: config.Log.Colorful}
 	fileFormatter := LogFormat{EnableColor: false}
-	Hook = NewLocalHook(w, consoleFormatter, fileFormatter, GetLogLevel(config.Log.LogLevel)...)
+	Hook = NewLocalHook(w, consoleFormatter, fileFormatter, levels...)
 	log.AddHook(Hook)
 }

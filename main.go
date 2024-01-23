@@ -4,6 +4,7 @@ import (
 	"fmt"
 	perp "github.com/IUnlimit/perpetua/cmd/perpe"
 	"github.com/IUnlimit/perpetua/internal/conf"
+	"github.com/IUnlimit/perpetua/internal/handle"
 	"github.com/IUnlimit/perpetua/internal/hook"
 	"github.com/IUnlimit/perpetua/internal/logger"
 )
@@ -13,9 +14,8 @@ func main() {
 	conf.Init()
 	hook.Init()
 	logger.Init()
-	//perp.Bootstrap()
-	perp.EnableAgent()
-
+	handle.Init()
+	perp.Bootstrap()
 }
 
 func printBanner() {

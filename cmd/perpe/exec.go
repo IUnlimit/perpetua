@@ -2,11 +2,14 @@ package perp
 
 import (
 	"fmt"
+	"github.com/IUnlimit/perpetua/configs"
+	"github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/conf"
 	"github.com/IUnlimit/perpetua/internal/hook"
 	"github.com/IUnlimit/perpetua/internal/logger"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
+	"github.com/bytedance/gopkg/util/gopool"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -15,8 +18,8 @@ import (
 
 // Configure NTQQ settings using config.yml
 func Configure() {
-	config := conf.Config
-	lgrFolder := config.ParentPath + "/" + conf.LgrFolder
+	config := global.Config
+	lgrFolder := config.ParentPath + "/" + global.LgrFolder
 
 	log.Info("Searching Lagrange.OneBot ...")
 	err := initLagrange(lgrFolder, config)
@@ -24,15 +27,14 @@ func Configure() {
 		log.Fatalf("Lagrange.OneBot init error %v", err)
 	}
 
+	fileName := "appsettings.json"
 	fileFolder := config.ParentPath + "/"
-	exists := utils.FileExists(fileFolder + "appsettings.json")
+	exists, err := conf.LoadConfig(fileName, fileFolder, configs.AppSettings, &global.AppSettings)
+	if err != nil {
+		log.Fatalf("Failed to load lgr config: %v", err)
+	}
 	if !exists {
-		log.Warn("Can't find `appsettings.json`, generating default configuration (See https://github.com/LagrangeDev/Lagrange.Core?tab=readme-ov-file#appsettingsjson-example)")
-		err = conf.UpdateLgrConfig(fileFolder)
-		if err != nil {
-			log.Fatalf("Failed to update lgr config %v", err)
-		}
-		log.Info("Default configuration has been generated, please configure and restart perpetua")
+		log.Info("Default `appsettings.json` has been generated, please configure and restart perpetua (See https://github.com/LagrangeDev/Lagrange.Core?tab=readme-ov-file#appsettingsjson-example)")
 		os.Exit(0)
 	}
 }
@@ -42,7 +44,7 @@ func Start() {
 	log.Info("Lagrange.OneBot starting ...")
 	err := runExec()
 	if err != nil {
-		log.Fatalf("file instance create failed %v", err)
+		log.Fatalf("file instance create failed: %v", err)
 	}
 	log.Info("Lagrange.OneBot start success")
 }
@@ -53,8 +55,8 @@ func runExec() error {
 	if windows {
 		execName += ".exe"
 	}
-	cmdDir := conf.Config.ParentPath
-	execPath := conf.LgrFolder + execName
+	cmdDir := global.Config.ParentPath
+	execPath := global.LgrFolder + execName
 
 	var cmd *exec.Cmd
 	if windows {
@@ -76,12 +78,12 @@ func runExec() error {
 		return err
 	}
 	// 将命令行输入复制到 stdin 管道中
-	go func() {
+	gopool.Go(func() {
 		_, err := io.Copy(in, os.Stdin)
 		if err != nil {
-			log.Fatalf("Failed to copy stdin %v", err)
+			log.Fatalf("Failed to copy stdin: %v", err)
 		}
-	}()
+	})
 
 	if err = cmd.Start(); err != nil {
 		return err
@@ -152,7 +154,7 @@ func updateNTQQImpl(owner string, repo string, zipPath string, lgrFolder string,
 
 	artifact := artifacts[selectIndex]
 	// check lgr version
-	if exists && artifact.UpdatedAt.Before(conf.Config.NTQQImpl.UpdatedAt) {
+	if exists && artifact.UpdatedAt.Before(global.Config.NTQQImpl.UpdatedAt) {
 		log.Info("Lagrange.OneBot is the latest version")
 		return nil
 	}

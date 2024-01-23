@@ -24,7 +24,7 @@ func GetWebSocketPort(ctx *gin.Context) {
 
 	port := listen.Addr().(*net.TCPAddr).Port
 	// open new ws service, wait for minutes
-	go CreateWSInstance(port)
+	CreateWSInstance(port)
 	log.Info("Create new websocket connection on port: ", port)
 
 	utils.SendResponse(ctx, port)

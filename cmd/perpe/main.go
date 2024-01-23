@@ -1,7 +1,11 @@
 package perp
 
+import "github.com/bytedance/gopkg/util/gopool"
+
 func Bootstrap() {
 	Configure()
-	go Start()
+	gopool.Go(func() {
+		Start()
+	})
 	EnableAgent()
 }
