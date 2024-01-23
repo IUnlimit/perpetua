@@ -3,13 +3,15 @@ module github.com/IUnlimit/perpetua
 go 1.21.4
 
 require (
+	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/cheggaaa/pb/v3 v3.1.4
+	github.com/gin-gonic/gin v1.9.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/mattn/go-colorable v0.1.13
 	github.com/sirupsen/logrus v1.9.3
 	github.com/valyala/bytebufferpool v1.0.0
-	github.com/gin-gonic/gin v1.9.1
+	github.com/bytedance/gopkg v0.0.0-20220118071334-3db87571198b
 )
 
 require (
