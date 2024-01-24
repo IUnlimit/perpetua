@@ -20,5 +20,3 @@ type HeartBeatStatus struct {
 	Online         bool `json:"online"`
 	Good           bool `json:"good"`
 }
-
-// PostType string `json:"post_type"`

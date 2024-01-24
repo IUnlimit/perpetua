@@ -8,6 +8,7 @@ import (
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
+	"github.com/IUnlimit/perpetua/pkg/deepcopy"
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
@@ -22,7 +23,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// CreateWSInstance create new ws instance
+// CreateWSInstance create new ws instance and wait client connection
 func CreateWSInstance(port int) {
 	var start bool
 	ctx := context.Background()
@@ -35,50 +36,76 @@ func CreateWSInstance(port int) {
 		}
 		defer conn.Close()
 
+		// check http header: AUTHORIZATION
+		impl, _ := getForwardImpl()
+		if len(impl.AccessToken) != 0 {
+			auth := r.Header.Get("AUTHORIZATION")
+			if auth != impl.AccessToken {
+				log.Error("Connection verification failed with auth-field: ", auth)
+				return
+			}
+		}
+
 		start = true
 		handler := NewHandler(ctx)
+		handler.AddWait()
 		handleList = append(handleList, handler)
-		log.Info("WebSocket connection established on port: ", port)
+		log.Infof("WebSocket connection established on port: %d with path: %s", port, r.URL.Path)
 
-		// write goroutine
-		// go pool: /api read and wait to respond
-		// go pool: /event push events
+		// heartbeat
+		gopool.Go(func() {
+			handler.AddWait()
+			err = doHeartbeat(conn, handler)
+			if err != nil {
+				log.Debugf("Error occurred when heartbeat on port-%d: %v", port, err)
+			}
+		})
+
+		// write to client
+		// perp -> client
 		gopool.Go(func() {
 			handler.AddWait()
 			for {
 				if handler.ShouldExit() {
-					log.Debugf("Websocket weite goroutine on port %d has exited", port)
+					log.Debugf("Websocket write goroutine on port %d has exited", port)
 					break
 				}
 
-				// TODO consume and write to conn
-				//var resp []byte
-				//err = conn.WriteMessage(messageType, resp)
+				handler.GetMessage(func(data *map[string]interface{}) {
+					gopool.Go(func() {
+						if handler.ShouldExit() {
+							return
+						}
+						err := conn.WriteJSON(data)
+						if err != nil {
+							log.Warnf("Failed to write message to WebSocket(port: %d): %v", port, err)
+							handler.WaitExitAll()
+						}
+					})
+				})
 
-				if err != nil {
-					log.Warnf("Failed to write message to WebSocket(port: %d): %v", port, err)
-					break
-				}
+				<-handler.receive
 			}
 		})
 
-		// read goroutine
+		// read from client
+		// perp <- client
 		gopool.Go(func() {
 			handler.AddWait()
 			for {
 				if handler.ShouldExit() {
 					log.Debugf("Websocket read goroutine on port %d has exited", port)
-					break
+					return
 				}
 
 				mType, message, err := conn.ReadMessage()
 				if err != nil {
 					log.Warnf("Failed to read message from WebSocket(port: %d): %v", port, err)
-					break
+					handler.WaitExitAll()
+					return
 				}
 
 				// TODO read and write to cache
-
 				log.Debugf("Received message(type: %d) on port-%d: %s", mType, port, string(message))
 			}
 		})
@@ -126,11 +153,20 @@ func CreateNTQQWebSocket() error {
 	if err != nil {
 		return err
 	}
+	log.Info("NTQQ websocket connection successful")
 	defer conn.Close()
 
-	log.Info("NTQQ websocket connection successful")
+	// write to NTQQ
+	// NTQQ <- perp
+	gopool.Go(func() {
+		//for {
+		//	// TODO
+		//}
+	})
+
+	// read from NTQQ
+	// NTQQ -> perp
 	for {
-		// NTQQ读取消息
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Errorf("Failed to read NTQQ message: %v", err)
@@ -138,7 +174,7 @@ func CreateNTQQWebSocket() error {
 		}
 
 		log.Debug("Received NTQQ message: ", string(message))
-		var event *model.HeartBeat
+		var event map[string]interface{}
 		err = json.Unmarshal(message, &event)
 		if err != nil {
 			log.Errorf("Failed to unmarshal NTQQ message: %s", string(message))
@@ -146,20 +182,27 @@ func CreateNTQQWebSocket() error {
 		}
 
 		// heartbeat
-		if event.MetaEventType == "heartbeat" {
-			global.Status = event.HeartBeatStatus
+		if event["meta_event_type"] == "heartbeat" {
+			status := event /*["status"].(map[string]interface{})*/
+			global.Heartbeat = &status
 			continue
 		}
 
 		// event
-		err = globalCache.Append(&event.MetaData, message)
+		uuid, err := globalCache.Append(event)
 		if err != nil {
 			log.Errorf("Failed to append global cache: %v", err)
 			continue
 		}
+		// broadcast message
+		for _, handler := range handleList {
+			handler.AddMessage(uuid)
+			handler.receive <- true
+		}
 	}
 }
 
+// wait NTQQ startup
 func waitNTQQStartup(host string, port int) <-chan struct{} {
 	done := make(chan struct{})
 
@@ -179,6 +222,35 @@ func waitNTQQStartup(host string, port int) <-chan struct{} {
 	return done
 }
 
+// do heartbeat to client
+func doHeartbeat(conn *websocket.Conn, handler *Handler) error {
+	impl, err := getForwardImpl()
+	if err != nil {
+		return err
+	}
+	ticker := time.NewTicker(time.Millisecond * time.Duration(impl.HeartBeatInterval))
+	defer ticker.Stop()
+
+	for {
+		if handler.ShouldExit() {
+			return nil
+		}
+
+		heartbeat := deepcopy.Copy(global.Heartbeat).(*map[string]interface{})
+		(*heartbeat)["time"] = time.Now().UnixMilli()
+		err := conn.WriteJSON(heartbeat)
+		if err != nil {
+			return err
+		}
+
+		select {
+		case <-ticker.C:
+			log.Debug("Heartbeat to client: ", conn.RemoteAddr())
+		}
+	}
+}
+
+// get first forwardImpl
 func getForwardImpl() (*model.Implementation, error) {
 	for _, impl := range global.AppSettings.Implementations {
 		if impl.Type == "ForwardWebSocket" {

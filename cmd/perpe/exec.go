@@ -7,7 +7,6 @@ import (
 	"github.com/IUnlimit/perpetua/internal/conf"
 	"github.com/IUnlimit/perpetua/internal/hook"
 	"github.com/IUnlimit/perpetua/internal/logger"
-	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	"github.com/bytedance/gopkg/util/gopool"
 	log "github.com/sirupsen/logrus"
@@ -19,17 +18,17 @@ import (
 // Configure NTQQ settings using config.yml
 func Configure() {
 	config := global.Config
-	lgrFolder := config.ParentPath + "/" + global.LgrFolder
+	lgrFolder := global.ParentPath + "/" + global.LgrFolder
 
 	log.Info("Searching Lagrange.OneBot ...")
-	err := initLagrange(lgrFolder, config)
+	err := initLagrange(lgrFolder, config.NTQQImpl.Update)
 	if err != nil {
 		log.Fatalf("Lagrange.OneBot init error %v", err)
 	}
 
 	fileName := "appsettings.json"
-	fileFolder := config.ParentPath + "/"
-	exists, err := conf.LoadConfig(fileName, fileFolder, configs.AppSettings, &global.AppSettings)
+	fileFolder := global.ParentPath + "/"
+	exists, err := conf.LoadConfig(fileName, fileFolder, "json", configs.AppSettings, &global.AppSettings)
 	if err != nil {
 		log.Fatalf("Failed to load lgr config: %v", err)
 	}
@@ -55,7 +54,7 @@ func runExec() error {
 	if windows {
 		execName += ".exe"
 	}
-	cmdDir := global.Config.ParentPath
+	cmdDir := global.ParentPath
 	execPath := global.LgrFolder + execName
 
 	var cmd *exec.Cmd
@@ -109,13 +108,13 @@ func runExec() error {
 	return nil
 }
 
-func initLagrange(lgrFolder string, config *model.Config) error {
+func initLagrange(lgrFolder string, update bool) error {
 	owner := "LagrangeDev"
 	repo := "Lagrange.Core"
 	exists := utils.FileExists(lgrFolder + "Lagrange.OneBot.pdb")
 
-	if !exists || config.NTQQImpl.Update {
-		zipPath := config.ParentPath + "/Lagrange.OneBot.zip"
+	if !exists || update {
+		zipPath := global.ParentPath + "/Lagrange.OneBot.zip"
 		err := updateNTQQImpl(owner, repo, zipPath, lgrFolder, exists, func(existNow bool) {
 			if !existNow {
 				log.Fatal("Lagrange.OneBot file can't be found, initialization failed")

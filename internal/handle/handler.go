@@ -2,14 +2,35 @@ package handle
 
 import (
 	"context"
+	collections "github.com/chenjiandongx/go-queue"
 	"sync"
 )
 
+// handleList stores handle.Handler for client websocket
+var handleList []*Handler
+
 type Handler struct {
-	ctx       context.Context
-	wg        sync.WaitGroup
-	cache     [][]byte
+	ctx     context.Context
+	wg      sync.WaitGroup
+	receive chan bool
+	// waiting goroutine count
 	waitCount int
+	queue     *collections.Queue
+}
+
+func (h *Handler) AddMessage(uuid string) {
+	h.queue.Put(uuid)
+}
+
+// GetMessage from local cache
+func (h *Handler) GetMessage(invoke func(*map[string]interface{})) {
+	for e, _ := h.queue.Get(); e != nil; {
+		data, _ := globalCache.cache.Get(e)
+		if data == nil {
+			continue
+		}
+		invoke(data.(*map[string]interface{}))
+	}
 }
 
 // ShouldExit 是否需要结束
@@ -39,5 +60,6 @@ func NewHandler(ctx context.Context) *Handler {
 	return &Handler{
 		ctx:       ctx,
 		waitCount: 0,
+		queue:     collections.NewQueue(),
 	}
 }
