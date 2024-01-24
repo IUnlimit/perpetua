@@ -71,7 +71,7 @@ func CreateWSInstance(port int) {
 					break
 				}
 
-				handler.GetMessage(func(data *map[string]interface{}) {
+				handler.GetMessage(func(data *global.MsgData) {
 					gopool.Go(func() {
 						if handler.ShouldExit() {
 							return
@@ -174,7 +174,7 @@ func CreateNTQQWebSocket() error {
 		}
 
 		log.Debug("Received NTQQ message: ", string(message))
-		var event map[string]interface{}
+		var event global.MsgData
 		err = json.Unmarshal(message, &event)
 		if err != nil {
 			log.Errorf("Failed to unmarshal NTQQ message: %s", string(message))
@@ -183,7 +183,7 @@ func CreateNTQQWebSocket() error {
 
 		// heartbeat
 		if event["meta_event_type"] == "heartbeat" {
-			status := event /*["status"].(map[string]interface{})*/
+			status := event /*["status"].(global.MsgData)*/
 			global.Heartbeat = &status
 			continue
 		}
@@ -236,7 +236,7 @@ func doHeartbeat(conn *websocket.Conn, handler *Handler) error {
 			return nil
 		}
 
-		heartbeat := deepcopy.Copy(global.Heartbeat).(*map[string]interface{})
+		heartbeat := deepcopy.Copy(global.Heartbeat).(*global.MsgData)
 		(*heartbeat)["time"] = time.Now().UnixMilli()
 		err := conn.WriteJSON(heartbeat)
 		if err != nil {

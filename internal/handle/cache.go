@@ -1,6 +1,7 @@
 package handle
 
 import (
+	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/bluele/gcache"
 	"github.com/google/uuid"
 	"time"
@@ -19,7 +20,7 @@ func NewCache(expireTime time.Duration) *Cache {
 	}
 }
 
-func (c *Cache) Append(data map[string]interface{}) (string, error) {
+func (c *Cache) Append(data global.MsgData) (string, error) {
 	id := uuid.NewString()
 	err := c.cache.Set(id, data)
 	if err != nil {

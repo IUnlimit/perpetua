@@ -2,6 +2,7 @@ package handle
 
 import (
 	"context"
+	global "github.com/IUnlimit/perpetua/internal"
 	collections "github.com/chenjiandongx/go-queue"
 	"sync"
 )
@@ -23,13 +24,13 @@ func (h *Handler) AddMessage(uuid string) {
 }
 
 // GetMessage from local cache
-func (h *Handler) GetMessage(invoke func(*map[string]interface{})) {
+func (h *Handler) GetMessage(invoke func(data *global.MsgData)) {
 	for e, _ := h.queue.Get(); e != nil; {
 		data, _ := globalCache.cache.Get(e)
 		if data == nil {
 			continue
 		}
-		invoke(data.(*map[string]interface{}))
+		invoke(data.(*global.MsgData))
 	}
 }
 

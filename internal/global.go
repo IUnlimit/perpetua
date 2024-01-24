@@ -2,6 +2,9 @@ package global
 
 import "github.com/IUnlimit/perpetua/internal/model"
 
+// MsgData websocket message data type
+type MsgData map[string]interface{}
+
 // ParentPath 配置文件目录路径
 const ParentPath = "perpetua/"
 
@@ -15,4 +18,4 @@ var Config *model.Config
 var AppSettings *model.AppSettings
 
 // Heartbeat NTQQ heartbeat status
-var Heartbeat *map[string]interface{}
+var Heartbeat *MsgData
