@@ -35,10 +35,7 @@ http:
 # websocket 相关配置
 web-socket:
   # ws监听最长等待时间
-  timeout: 10s
+  timeout: 15s
 
-# 配置文件主目录
-parent-path: "perpetua/"
-
-# 接收消息的最大缓存时间。新建立的ws连接将会被推送所有未过期消息
-msg-expire-time: 0s
+# 接收消息的最大缓存时间
+msg-expire-time: 30m

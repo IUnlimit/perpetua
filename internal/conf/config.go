@@ -8,12 +8,14 @@ import (
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	"os"
 	"regexp"
 )
 
 // LoadConfig creat and load config, return exists(file)
-func LoadConfig(fileName string, fileFolder string, fs embed.FS, config any) (bool, error) {
+// kind: json / yaml
+func LoadConfig(fileName string, fileFolder string, kind string, fs embed.FS, config any) (bool, error) {
 	filePath := fileFolder + fileName
 	exists := utils.FileExists(filePath)
 	if !exists {
@@ -33,7 +35,13 @@ func LoadConfig(fileName string, fileFolder string, fs embed.FS, config any) (bo
 		return exists, err
 	}
 
-	err = json.Unmarshal(data, config)
+	if kind == "json" {
+		err = json.Unmarshal(data, config)
+	} else if kind == "yaml" {
+		err = yaml.Unmarshal(data, config)
+	} else {
+		err = errors.New("unknown file type: " + kind)
+	}
 	if err != nil {
 		return exists, err
 	}
