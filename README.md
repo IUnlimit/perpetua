@@ -23,9 +23,28 @@ ______   _________________   _____/  |_ __ _______
 </p>
 
 <p align="center">
-   <a href="https://iunlimit.github.io/perpetua/">Document</a>
+   <a href="https://iunlimit.github.io/perpetua/">[文档]</a>
 </p>
 
 ### 注意事项
 
 本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，但[签名服务器配置](https://github.com/IUnlimit/perpetua/blob/main/configs/appsettings.json#L9)项部分需您自行寻找解决方案。详见[Lagrange.Core#known-problem](https://github.com/LagrangeDev/Lagrange.Core#known-problem)
+
+### 拓展支持
+
+- [x] 服务注册与发现
+- [ ] 自动重启与断点续传 (client -> NTQQ)
+- [ ] 负载均衡
+
+### 拓展实现
+
+<details>
+<summary>API</summary>
+
+| API                | 功能          |
+|--------------------|-------------|
+| /get_ws_port       | [获取分配的ws端口] |
+
+[获取分配的ws端口]: #
+
+</details>
