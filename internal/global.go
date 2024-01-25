@@ -9,7 +9,7 @@ import (
 type MsgData map[string]interface{}
 
 // ParentPath perp files path
-const ParentPath = "perpetua/"
+const ParentPath = "config/"
 
 // LgrFolder lgr bin directory
 const LgrFolder = "Lagrange.OneBot/"

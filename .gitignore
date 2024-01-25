@@ -22,5 +22,5 @@ go.work
 
 # Custom
 .idea/
-perpetua/
+config/
 output/
