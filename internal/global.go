@@ -1,15 +1,24 @@
 package global
 
-import "github.com/IUnlimit/perpetua/internal/model"
+import (
+	"github.com/IUnlimit/perpetua/internal/model"
+	"regexp"
+)
 
 // MsgData websocket message data type
 type MsgData map[string]interface{}
 
-// ParentPath 配置文件目录路径
+// ParentPath perp files path
 const ParentPath = "perpetua/"
 
-// LgrFolder lgr文件存放路径
+// LgrFolder lgr bin directory
 const LgrFolder = "Lagrange.OneBot/"
+
+// EchoPrefix is prefix for generating echos
+const EchoPrefix = "perp"
+
+// EchoRegx to match ${EchoPrefix}#${uuid}#client-echo
+var EchoRegx = regexp.MustCompile(`([^#]+)#([^#]+)#(.+)`)
 
 // Config perpetua config.yml
 var Config *model.Config

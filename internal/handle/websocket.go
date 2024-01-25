@@ -13,15 +13,11 @@ import (
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 	"time"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		// allow all sources conn
-		return true
-	},
-}
+var upgrader websocket.Upgrader
 
 // CreateWSInstance create new ws instance and wait client connection
 func CreateWSInstance(port int) {
@@ -31,7 +27,7 @@ func CreateWSInstance(port int) {
 		// upgrade HTTP to WebSocket conn
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			log.Errorf("Failed to upgrade connection to WebSocket: %v", err)
+			log.Errorf("[Client] Failed to upgrade connection to WebSocket: %v", err)
 			return
 		}
 		defer conn.Close()
@@ -41,7 +37,7 @@ func CreateWSInstance(port int) {
 		if len(impl.AccessToken) != 0 {
 			auth := r.Header.Get("AUTHORIZATION")
 			if auth != impl.AccessToken {
-				log.Error("Connection verification failed with auth-field: ", auth)
+				log.Error("[Client] Connection verification failed with auth-field: ", auth)
 				return
 			}
 		}
@@ -50,14 +46,14 @@ func CreateWSInstance(port int) {
 		handler := NewHandler(ctx)
 		handler.AddWait()
 		handleList = append(handleList, handler)
-		log.Infof("WebSocket connection established on port: %d with path: %s", port, r.URL.Path)
+		log.Infof("[Client] WebSocket connection established on port: %d with path: %s", port, r.URL.Path)
 
 		// heartbeat
 		gopool.Go(func() {
 			handler.AddWait()
-			err = doHeartbeat(conn, handler)
+			err := doHeartbeat(handler, conn)
 			if err != nil {
-				log.Debugf("Error occurred when heartbeat on port-%d: %v", port, err)
+				log.Debugf("[Client] Error occurred when heartbeat on port-%d: %v", port, err)
 			}
 		})
 
@@ -65,55 +61,21 @@ func CreateWSInstance(port int) {
 		// perp -> client
 		gopool.Go(func() {
 			handler.AddWait()
-			for {
-				if handler.ShouldExit() {
-					log.Debugf("Websocket write goroutine on port %d has exited", port)
-					break
-				}
-
-				handler.GetMessage(func(data *global.MsgData) {
-					gopool.Go(func() {
-						if handler.ShouldExit() {
-							return
-						}
-						err := conn.WriteJSON(data)
-						if err != nil {
-							log.Warnf("Failed to write message to WebSocket(port: %d): %v", port, err)
-							handler.WaitExitAll()
-						}
-					})
-				})
-
-				<-handler.receive
-			}
+			write2ClientLoop(handler, conn, port)
 		})
 
 		// read from client
 		// perp <- client
 		gopool.Go(func() {
 			handler.AddWait()
-			for {
-				if handler.ShouldExit() {
-					log.Debugf("Websocket read goroutine on port %d has exited", port)
-					return
-				}
-
-				mType, message, err := conn.ReadMessage()
-				if err != nil {
-					log.Warnf("Failed to read message from WebSocket(port: %d): %v", port, err)
-					handler.WaitExitAll()
-					return
-				}
-
-				// TODO read and write to cache
-				log.Debugf("Received message(type: %d) on port-%d: %s", mType, port, string(message))
-			}
+			readFromClientLoop(handler, conn, port)
 		})
 
 		handler.WaitDone()
-		log.Info("WebSocket connection closed on port: ", port)
+		log.Info("[Client] WebSocket connection closed on port: ", port)
 	}
 
+	// todo remove handler
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: http.HandlerFunc(handleWebSocket),
@@ -132,12 +94,14 @@ func CreateWSInstance(port int) {
 	gopool.Go(func() {
 		err := server.ListenAndServe()
 		if err != nil {
-			log.Warnf("WebSocket connection(port: %d) exit with error: %v", port, err)
+			log.Warnf("[Client] WebSocket connection(port: %d) exit with error: %v", port, err)
 		}
 	})
 }
 
 func CreateNTQQWebSocket() error {
+	var handle = NewHandler(context.Background())
+	handle.AddWait()
 	impl, err := getForwardImpl()
 	if err != nil {
 		return err
@@ -147,59 +111,29 @@ func CreateNTQQWebSocket() error {
 	request.Header.Set("AccessToken", impl.AccessToken)
 	wsUrl := fmt.Sprintf("ws://%s:%d/%s", impl.Host, impl.Port, impl.Suffix)
 
-	log.Info("Start connecting to NTQQ websocket: ", wsUrl)
+	log.Info("[NTQQ] Start connecting to NTQQ websocket: ", wsUrl)
 	<-waitNTQQStartup(impl.Host, impl.Port)
 	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, request.Header)
 	if err != nil {
 		return err
 	}
-	log.Info("NTQQ websocket connection successful")
+	log.Info("[NTQQ] Websocket connection successful")
 	defer conn.Close()
 
 	// write to NTQQ
 	// NTQQ <- perp
 	gopool.Go(func() {
-		//for {
-		//	// TODO
-		//}
+		handle.AddWait()
+		write2NTQQLoop(handle, conn)
 	})
 
 	// read from NTQQ
 	// NTQQ -> perp
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Errorf("Failed to read NTQQ message: %v", err)
-			continue
-		}
-
-		log.Debug("Received NTQQ message: ", string(message))
-		var event global.MsgData
-		err = json.Unmarshal(message, &event)
-		if err != nil {
-			log.Errorf("Failed to unmarshal NTQQ message: %s", string(message))
-			continue
-		}
-
-		// heartbeat
-		if event["meta_event_type"] == "heartbeat" {
-			status := event /*["status"].(global.MsgData)*/
-			global.Heartbeat = &status
-			continue
-		}
-
-		// event
-		uuid, err := globalCache.Append(event)
-		if err != nil {
-			log.Errorf("Failed to append global cache: %v", err)
-			continue
-		}
-		// broadcast message
-		for _, handler := range handleList {
-			handler.AddMessage(uuid)
-			handler.receive <- true
-		}
+	err = readFromNTQQLoop(handle, conn)
+	if err != nil {
+		return err
 	}
+	return nil
 }
 
 // wait NTQQ startup
@@ -223,7 +157,7 @@ func waitNTQQStartup(host string, port int) <-chan struct{} {
 }
 
 // do heartbeat to client
-func doHeartbeat(conn *websocket.Conn, handler *Handler) error {
+func doHeartbeat(handler *Handler, conn *websocket.Conn) error {
 	impl, err := getForwardImpl()
 	if err != nil {
 		return err
@@ -236,9 +170,12 @@ func doHeartbeat(conn *websocket.Conn, handler *Handler) error {
 			return nil
 		}
 
+		// update heartbeat time
 		heartbeat := deepcopy.Copy(global.Heartbeat).(*global.MsgData)
 		(*heartbeat)["time"] = time.Now().UnixMilli()
+		handler.Lock.Lock()
 		err := conn.WriteJSON(heartbeat)
+		handler.Lock.Unlock()
 		if err != nil {
 			return err
 		}
@@ -247,6 +184,163 @@ func doHeartbeat(conn *websocket.Conn, handler *Handler) error {
 		case <-ticker.C:
 			log.Debug("Heartbeat to client: ", conn.RemoteAddr())
 		}
+	}
+}
+
+func write2NTQQLoop(handle *Handler, conn *websocket.Conn) {
+	for {
+		if handle.ShouldExit() {
+			return
+		}
+		<-echoMap.Receive
+		for _, handler := range handleList {
+			id := handler.GetId()
+			echoMap.JustGet(id, func(data *global.MsgData) {
+				// TODO 断点续传,NTQQ重连尝试 echo赋值错误
+				log.Debugf("[NTQQ<-] Write to channel(id: %s) with message: %v", handler.GetId(), data)
+				err := conn.WriteJSON(data)
+				if err != nil {
+					log.Errorf("[NTQQ<-] Channel(id: %s) write to NTQQ failed: %v", handler.GetId(), err)
+					handle.WaitExitAll()
+				}
+			})
+		}
+	}
+}
+
+func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
+	for {
+		if handle.ShouldExit() {
+			return errors.New("exception interrupt")
+		}
+
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Errorf("[NTQQ->] Failed to read NTQQ message: %v", err)
+			handle.WaitExitAll()
+			continue
+		}
+
+		var msgData global.MsgData
+		err = json.Unmarshal(message, &msgData)
+		if err != nil {
+			log.Errorf("[NTQQ->] Failed to unmarshal NTQQ message: %s", string(message))
+			handle.WaitExitAll()
+			continue
+		}
+
+		// heartbeat
+		if msgData["meta_event_type"] == "heartbeat" {
+			status := msgData /*["status"].(global.MsgData)*/
+			global.Heartbeat = &status
+			continue
+		}
+
+		// msgData
+		uuid, err := globalCache.Append(msgData)
+		if err != nil {
+			log.Errorf("[NTQQ->] Failed to append global cache: %v", err)
+			handle.WaitExitAll()
+			continue
+		}
+
+		// broadcast message
+		receivers := make([]*Handler, 0)
+		echo := utils.GetDefault(msgData["echo"], "")
+		if len(echo) == 0 { // global
+			log.Debug("[NTQQ->] Received global NTQQ message: ", string(message))
+			receivers = append(receivers, handleList...)
+		} else { // response
+			var id string
+			if len(echo) == len(global.EchoPrefix)+2+36 {
+				// ${EchoPrefix}#${uuid}#
+				log.Debugf("[NTQQ->] Received NTQQ message to specified handler(id: %s)", string(message))
+				id = strings.Split(echo, "#")[1]
+				msgData["echo"] = ""
+			} else {
+				// ${EchoPrefix}#${uuid}#client-echo
+				matches := global.EchoRegx.FindStringSubmatch(echo)
+				if len(matches) != 4 {
+					log.Errorf("[NTQQ->] Unable to match handler's(id: %s) echo value: %s", id, echo)
+					handle.WaitExitAll()
+					continue
+				}
+				id = matches[2]
+				msgData["echo"] = matches[3]
+			}
+			handler := FindHandler(id)
+			if handler == nil {
+				log.Error("[NTQQ->] Unknown handler id: ", id)
+				handle.WaitExitAll()
+				continue
+			}
+			receivers = append(receivers, handler)
+		}
+		// when closed, staying dispatch
+		for _, handler := range receivers {
+			gopool.Go(func() {
+				// todo delete global message when handler Receive
+				// todo add global message cache ?
+				handler.AddMessage(uuid)
+				handler.Receive <- true
+			})
+		}
+	}
+}
+
+func write2ClientLoop(handler *Handler, conn *websocket.Conn, port int) {
+	for {
+		if handler.ShouldExit() {
+			log.Debugf("[->Client] Websocket write goroutine on port %d has exited", port)
+			return
+		}
+
+		<-handler.Receive
+		handler.GetMessage(func(data global.MsgData) {
+			if handler.ShouldExit() {
+				return
+			}
+			handler.Lock.Lock()
+			err := conn.WriteJSON(data)
+			handler.Lock.Unlock()
+			if err != nil {
+				log.Warnf("[->Client] Failed to write message to WebSocket(port: %d): %v", port, err)
+				handler.WaitExitAll()
+			}
+		})
+	}
+}
+
+func readFromClientLoop(handler *Handler, conn *websocket.Conn, port int) {
+	for {
+		if handler.ShouldExit() {
+			log.Debugf("[<-Client] Websocket read goroutine on port %d has exited", port)
+			return
+		}
+
+		mType, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Warnf("[<-Client] Failed to read message from WebSocket(port: %d): %v", port, err)
+			handler.WaitExitAll()
+			return
+		}
+		log.Debugf("[<-Client] Received message(type: %d) on port-%d: %s", mType, port, string(message))
+
+		var msgData global.MsgData
+		err = json.Unmarshal(message, &msgData)
+		if err != nil {
+			log.Errorf("[<-Client] Failed to unmarshal client message: %s", string(message))
+			continue
+		}
+
+		// sign with echo field
+		id := handler.GetId()
+		echo := msgData["echo"].(string)
+		echo = fmt.Sprintf("%s#%s#%s", global.EchoPrefix, id, echo)
+		msgData["echo"] = echo
+		log.Debugf("[<-Client] Update client(port-%d) message echo: %s", port, echo)
+		echoMap.JustPut(id, &msgData)
+		echoMap.Receive <- true
 	}
 }
 

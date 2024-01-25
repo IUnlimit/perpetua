@@ -16,3 +16,11 @@ func Format(s string, args ...interface{}) string {
 	}
 	return result
 }
+
+// GetDefault allows the data param to be nil
+func GetDefault(data any, def string) string {
+	if data == nil {
+		return def
+	}
+	return data.(string)
+}

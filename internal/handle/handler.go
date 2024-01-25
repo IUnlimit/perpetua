@@ -4,6 +4,7 @@ import (
 	"context"
 	global "github.com/IUnlimit/perpetua/internal"
 	collections "github.com/chenjiandongx/go-queue"
+	"github.com/google/uuid"
 	"sync"
 )
 
@@ -11,12 +12,16 @@ import (
 var handleList []*Handler
 
 type Handler struct {
-	ctx     context.Context
-	wg      sync.WaitGroup
-	receive chan bool
+	Receive chan bool
+	Lock    sync.Mutex
+
+	id  string
+	ctx context.Context
 	// waiting goroutine count
 	waitCount int
-	queue     *collections.Queue
+	// thread safe queue
+	queue *collections.Queue
+	wg    sync.WaitGroup
 }
 
 func (h *Handler) AddMessage(uuid string) {
@@ -24,13 +29,17 @@ func (h *Handler) AddMessage(uuid string) {
 }
 
 // GetMessage from local cache
-func (h *Handler) GetMessage(invoke func(data *global.MsgData)) {
-	for e, _ := h.queue.Get(); e != nil; {
+func (h *Handler) GetMessage(consumer func(data global.MsgData)) {
+	for {
+		e, ok := h.queue.Get()
+		if !ok {
+			return
+		}
 		data, _ := globalCache.cache.Get(e)
 		if data == nil {
 			continue
 		}
-		invoke(data.(*global.MsgData))
+		consumer(data.(global.MsgData))
 	}
 }
 
@@ -57,10 +66,25 @@ func (h *Handler) WaitDone() {
 	h.wg.Wait()
 }
 
+func (h *Handler) GetId() string {
+	return h.id
+}
+
 func NewHandler(ctx context.Context) *Handler {
 	return &Handler{
 		ctx:       ctx,
+		id:        uuid.NewString(),
+		Receive:   make(chan bool),
 		waitCount: 0,
 		queue:     collections.NewQueue(),
 	}
+}
+
+func FindHandler(id string) *Handler {
+	for _, handler := range handleList {
+		if handler.id == id {
+			return handler
+		}
+	}
+	return nil
 }
