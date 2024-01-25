@@ -24,6 +24,10 @@ func LoadConfig(fileName string, fileFolder string, kind string, fs embed.FS, co
 		if err != nil {
 			return false, err
 		}
+		err = os.MkdirAll(fileFolder, os.ModePerm)
+		if err != nil {
+			return false, err
+		}
 		err = utils.CreateFile(filePath, data)
 		if err != nil {
 			return false, err

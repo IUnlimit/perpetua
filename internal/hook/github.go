@@ -6,7 +6,7 @@ import (
 	"github.com/IUnlimit/perpetua/internal/utils"
 )
 
-const TOKEN = "Z2hwX0ZCc08xQlpFNU52VnY3RFBLREZMV0s0YU9zc0FRNDBCcDRWcg=="
+const TOKEN = "0272493805f67556a6150d6576c161970a5f3a8bf0e8a56cd4aca4bac9a2b7b7b078878a34ed81147981e5268ab0462d64749bdb5d2fb3b0ca3c13bab71ed410"
 
 const ActionRunsApi = "https://api.github.com/repos/{0}/{1}/actions/runs"
 const ActionArtifactsApi = "https://api.github.com/repos/{0}/{1}/actions/artifacts"

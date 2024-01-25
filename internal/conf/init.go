@@ -14,4 +14,5 @@ func Init() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+	log.Info("Current perpetua instance version: ", Version)
 }

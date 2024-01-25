@@ -6,6 +6,7 @@ import (
 	"github.com/IUnlimit/perpetua/internal/erren"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net"
@@ -47,6 +48,9 @@ func GetJson(url string, headers map[string]string, v any) error {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
+	}
+	if resp.StatusCode != 200 {
+		return errors.New(fmt.Sprintf("Unexpected state code(:%d) with message: %s", resp.StatusCode, string(body)))
 	}
 
 	err = json.Unmarshal(body, v)

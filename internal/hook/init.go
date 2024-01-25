@@ -1,12 +1,11 @@
 package hook
 
-import "encoding/base64"
+import (
+	"github.com/IUnlimit/perpetua/internal/utils"
+)
 
 func Init() {
-	initGithub()
-}
-
-func initGithub() {
-	decode, _ := base64.StdEncoding.DecodeString(TOKEN)
-	headers["Authorization"] = "Bearer " + string(decode)
+	aesKey := []byte("perpetua-aes-key-field-github-00")
+	decryptAES := utils.DecryptAES(aesKey, TOKEN)
+	headers["Authorization"] = "Bearer " + decryptAES
 }
