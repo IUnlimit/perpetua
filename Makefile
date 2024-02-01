@@ -8,7 +8,7 @@ mac:
 
 # 编译适用于 Windows 的可执行文件
 windows:
-	GOOS=windows GOARCH=amd64 go build -o output/perp
+	GOOS=windows GOARCH=amd64 go build -o output/perp.exe
 
 # 默认目标为编译适用于 macOS 的可执行文件
 default: linux
