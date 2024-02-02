@@ -1,14 +1,16 @@
-![logo](_media/icon.svg)
+[//]: # (![logo]&#40;_media/icon.svg&#41;)
 
 # perpetua <small>beta</small>
 
-> 一个神奇的文档网站生成器。
+> OneBot协议实现下
+> 
+> 机器人实例与用户服务间第三方消息代理中间件
 
-- 简单、轻便 (压缩后 ~21kB)
-- 无需生成 html 文件
-- 众多主题
+- 单一QQ账号下多端接入
+- 事件回调、消息互通
+- 流量治理
 
 [GitHub](https://github.com/IUnlimit/perpetua)
 [Get Started](zh-cn/user/introduce.md)
 
-![color](#cecece)
+![color](#ffffff)
