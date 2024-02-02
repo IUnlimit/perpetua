@@ -30,6 +30,12 @@ ______   _________________   _____/  |_ __ _______
 
 本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，但[签名服务器配置](https://github.com/IUnlimit/perpetua/blob/main/configs/appsettings.json#L9)项部分需您自行寻找解决方案。详见[Lagrange.Core#known-problem](https://github.com/LagrangeDev/Lagrange.Core#known-problem)
 
+### 适配平台
+
+- [x] Linux
+- [x] MacOS
+- [ ] Windows
+
 ### 拓展支持
 
 - [x] 服务注册与发现
