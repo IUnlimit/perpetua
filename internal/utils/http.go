@@ -130,7 +130,7 @@ func download(resp *http.Response, filePath string, fileSize int64) error {
 	if fileSize == -1 {
 		fileSize = resp.ContentLength
 	}
-	log.Debug("contentLength: %dB", fileSize)
+	log.Debug("Download content length: %d", fileSize)
 
 	file, err := os.Create(filePath)
 	if err != nil {
