@@ -28,7 +28,7 @@ ______   _________________   _____/  |_ __ _______
 
 ### 注意事项
 
-本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，但[签名服务器配置](https://github.com/IUnlimit/perpetua/blob/main/configs/appsettings.json#L9)项部分需您自行寻找解决方案。详见[Lagrange.Core#known-problem](https://github.com/LagrangeDev/Lagrange.Core#known-problem)
+本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，并临时提供了[签名服务器配置](https://github.com/IUnlimit/perpetua/blob/main/configs/appsettings.json#L9)项部分。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
 
 ### 适配平台
 
@@ -36,7 +36,9 @@ ______   _________________   _____/  |_ __ _______
 - [x] MacOS
 - [x] Windows
 
-### 支持协议
+### OneBot 协议支持
+
+> 为了将 perpetua API 与 OneBot 实现作区分，perpetua 仅提供正向 WebSocket 端口作 OneBot 协议接口，拓展 API 实现使用 WebAPI 的形式供给调用。详见 [拓展实现-API](https://github.com/IUnlimit/perpetua?tab=readme-ov-file#%E6%8B%93%E5%B1%95%E5%AE%9E%E7%8E%B0)
 
 - [x] 正向 WebSocket
 
@@ -62,7 +64,12 @@ ______   _________________   _____/  |_ __ _______
 
 ### 通信 SDK
 
-| 语言 / 平台 | 名称                                                                         | 简介     | 通信协议支持   |
-|---------|----------------------------------------------------------------------------|--------|------|
-| Java    | [perpetua-sdk-for-java](https://github.com/IUnlimit/perpetua-sdk-for-java) | 官方社区实现 | Java |
+| 语言 / 平台 | 名称                                                                         | 简介     | 通信协议支持 |
+|---------|----------------------------------------------------------------------------|--------|--------|
+| Java    | [perpetua-sdk-for-java](https://github.com/IUnlimit/perpetua-sdk-for-java) | 官方社区实现 | Java   |
 
+
+### 致谢
+
+- 感谢原机器人社区的贡献者：<span style="display:inline; border:1px solid black; min-height:1em; padding: 1px 1px;"><b>白可乐</b></span>、Alan Zhao、[@fred913](https://github.com/fred913)
+- 感谢 [@Thexiaoyuqaq](https://github.com/Thexiaoyuqaq)、小豆子、阿丽塔、polar、一口小雨、黑土、仔仔 等用户在测试、策划方面提供的帮助与支持

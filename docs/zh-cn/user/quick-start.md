@@ -56,9 +56,7 @@ Windows 用户请使用 `powershell` 运行本项目，以避免直接运行 `ex
       "Microsoft.Hosting.Lifetime": "Information"
     }
   },
-  // 验证服务器，目前为必填项（计划 v0.0.4 后自动配置
-  // 详见 https://github.com/LagrangeDev/Lagrange.Core#known-problem
-  // 或找本人咨询
+  // 验证服务器，必填项（v0.0.4 后自动配置
   "SignServerUrl": "",
   "Account": {
     // qq 账户，若不填则使用扫码登陆
