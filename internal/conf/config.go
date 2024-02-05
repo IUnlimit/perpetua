@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"github.com/IUnlimit/perpetua/configs"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
@@ -64,12 +65,21 @@ func UpdateConfig(artifact *model.Artifact) error {
 		return errors.New("can't match platform, artifact name: " + artifact.Name)
 	}
 
-	global.Config.NTQQImpl = &model.NTQQImpl{
+	config := global.Config
+	config.NTQQImpl = &model.NTQQImpl{
 		ID:        artifact.ID,
 		Platform:  platform,
 		UpdatedAt: artifact.UpdatedAt,
 	}
 
-	// TODO record
+	bytes, err := yaml.Marshal(&config)
+	if err != nil {
+		return err
+	}
+	filePath := global.ParentPath + "/" + configs.ConfigFileName
+	err = os.WriteFile(filePath, bytes, 0644)
+	if err != nil {
+		return err
+	}
 	return nil
 }

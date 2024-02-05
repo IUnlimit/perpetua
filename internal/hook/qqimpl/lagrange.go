@@ -55,9 +55,12 @@ func updateNTQQImpl(owner string, repo string, zipPath string, lgrFolder string,
 
 	artifact := artifacts[selectIndex]
 	// check lgr version
-	if exists && artifact.UpdatedAt.Before(global.Config.NTQQImpl.UpdatedAt) {
-		log.Info("Lagrange.OneBot is the latest version")
-		return nil
+	if exists {
+		if artifact.UpdatedAt.Before(global.Config.NTQQImpl.UpdatedAt) {
+			log.Info("Lagrange.OneBot is the latest version")
+			return nil
+		}
+		log.Infof("Pulled the latest Lagrange.OneBot arch, time: %s", artifact.UpdatedAt.String())
 	}
 
 	err = hook.GetAuthorizedFile(artifact.ArchiveDownloadURL, zipPath, -1)
@@ -76,6 +79,9 @@ func updateNTQQImpl(owner string, repo string, zipPath string, lgrFolder string,
 
 	exists = utils.FileExists(lgrFolder + "Lagrange.OneBot.pdb")
 	callback(exists)
-	conf.UpdateConfig(artifact)
+	err = conf.UpdateConfig(artifact)
+	if err != nil {
+		return err
+	}
 	return nil
 }

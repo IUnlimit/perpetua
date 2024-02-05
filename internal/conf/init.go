@@ -8,9 +8,8 @@ import (
 
 func Init() {
 	versionCheck()
-	fileName := "config.yml"
 	fileFolder := global.ParentPath + "/"
-	_, err := LoadConfig(fileName, fileFolder, "yaml", configs.Config, &global.Config)
+	_, err := LoadConfig(configs.ConfigFileName, fileFolder, "yaml", configs.Config, &global.Config)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}

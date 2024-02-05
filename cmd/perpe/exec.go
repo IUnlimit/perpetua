@@ -33,9 +33,8 @@ func Configure() {
 		log.Fatalf("Lagrange.OneBot init error %v", err)
 	}
 
-	fileName := "appsettings.json"
 	fileFolder := global.ParentPath + "/"
-	exists, err := conf.LoadConfig(fileName, fileFolder, "json", configs.AppSettings, &global.AppSettings)
+	exists, err := conf.LoadConfig(configs.AppSettingsFileName, fileFolder, "json", configs.AppSettings, &global.AppSettings)
 	if err != nil {
 		log.Fatalf("Failed to load lgr config: %v", err)
 	}
