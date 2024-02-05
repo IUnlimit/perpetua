@@ -27,5 +27,5 @@ type Response struct {
 	 * - key: 响应数据名
 	 * - value: 数据值
 	 * */
-	Data string `json:"data,omitempty"`
+	Data map[string]any `json:"data,omitempty"`
 }

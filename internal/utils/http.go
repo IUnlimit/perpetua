@@ -112,17 +112,21 @@ func BadResponse(c *gin.Context, err error) {
 }
 
 // SendResponse Try to return data
-func SendResponse(c *gin.Context, data any) {
-	bytes, err := json.Marshal(data)
-	if err != nil {
-		BadResponse(c, err)
+// entry: mapKey1, mapValue1 ...
+func SendResponse(c *gin.Context, entry ...any) {
+	if len(entry)%2 != 0 {
+		BadResponse(c, errors.New(fmt.Sprintf("错误的 map 参数个数: %d", len(entry))))
 		return
+	}
+	m := make(map[string]any)
+	for i := 0; i < len(entry); i += 2 {
+		m[entry[i].(string)] = entry[i+1]
 	}
 
 	c.JSON(http.StatusOK, model.Response{
 		Status:  "ok",
 		RetCode: 0,
-		Data:    string(bytes),
+		Data:    m,
 	})
 }
 

@@ -274,6 +274,7 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 				handle.WaitExitAll()
 				continue
 			}
+			log.Debugf("[NTQQ->] Received NTQQ message: %s", msgData)
 			receivers = append(receivers, handler)
 		}
 		// when closed, staying dispatch
@@ -335,6 +336,9 @@ func readFromClientLoop(handler *Handler, conn *websocket.Conn, port int) {
 
 		// sign with echo field
 		id := handler.GetId()
+		if msgData["echo"] == nil {
+			msgData["echo"] = ""
+		}
 		echo := msgData["echo"].(string)
 		echo = fmt.Sprintf("%s#%s#%s", global.EchoPrefix, id, echo)
 		msgData["echo"] = echo

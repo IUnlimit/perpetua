@@ -28,7 +28,8 @@ func GetWebSocketPort(ctx *gin.Context) {
 	handle.CreateWSInstance(port)
 	log.Info("Create new websocket connection on port: ", port)
 
-	utils.SendResponse(ctx, port)
+	utils.SendResponse(ctx,
+		"port", port)
 }
 
 // EnableHttpService enable http server
