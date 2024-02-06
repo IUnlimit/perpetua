@@ -29,5 +29,12 @@ type Http struct {
 }
 
 type WebSocket struct {
-	Timeout time.Duration `yaml:"timeout,omitempty"`
+	Timeout   time.Duration `yaml:"timeout,omitempty"`
+	RangePort *RangePort    `yaml:"range-port"`
+}
+
+type RangePort struct {
+	Enabled bool `yaml:"enabled,omitempty"`
+	Start   int  `yaml:"start,omitempty"`
+	End     int  `yaml:"end,omitempty"`
 }

@@ -36,6 +36,14 @@ http:
 web-socket:
   # ws监听最长等待时间
   timeout: 15s
+  # 指定范围 [start, end] 内随机监听端口
+  range-port:
+    # 是否开启功能
+    enabled: false
+    # 起始端口
+    start: 8000
+    # 终止端口
+    end: 8010
 
 # 接收消息的最大缓存时间
 msg-expire-time: 30m
