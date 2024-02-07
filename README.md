@@ -54,9 +54,9 @@ ______   _________________   _____/  |_ __ _______
 <details>
 <summary>API</summary>
 
-| API                | 功能          |
-|--------------------|-------------|
-| /get_ws_port       | [获取分配的ws端口] |
+| API                | 功能                                                                                       |
+|--------------------|------------------------------------------------------------------------------------------|
+| /get_ws_port       | [获取分配的ws端口](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_ws_port) |
 
 [获取分配的ws端口]: #
 
@@ -70,6 +70,5 @@ ______   _________________   _____/  |_ __ _______
 
 
 ### 致谢
-
-- 感谢原机器人社区的贡献者：<span style="display:inline; border:1px solid black; min-height:1em; padding: 1px 1px;"><b>白可乐</b></span>、Alan Zhao、[@fred913](https://github.com/fred913)
+- 感谢原机器人社区的贡献者：†白可乐、Alan Zhao、[@fred913](https://github.com/fred913)
 - 感谢 [@Thexiaoyuqaq](https://github.com/Thexiaoyuqaq)、小豆子、阿丽塔、polar、一口小雨、黑土、仔仔 等用户在测试、策划方面提供的帮助与支持

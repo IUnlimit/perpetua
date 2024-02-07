@@ -150,6 +150,14 @@ http:
 web-socket:
   # ws监听最长等待时间
   timeout: 15s
+  # 指定范围 [start, end] 内随机监听端口
+  range-port:
+    # 是否开启功能
+    enabled: false
+    # 起始端口
+    start: 8000
+    # 终止端口
+    end: 8010
 
 # 接收消息的最大缓存时间
 msg-expire-time: 30m
@@ -157,6 +165,12 @@ msg-expire-time: 30m
 
 </details>
 
+## 连接
 
+1. 获取 ws 端口 
 
+    使用 `GET` 请求访问 [/get_ws_port](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_ws_port)。Perpetua 采取动态端口的监听方式来避免端口冲突和配置文件过度耦合等问题，以提高服务的可伸缩性
 
+2. 建立 WebSocket 连接
+
+    根据获取的端口，与 Perpetua 建立连接。目前仅支持通过 ['/' 接口](https://github.com/botuniverse/onebot-11/blob/master/communication/ws.md#-%E6%8E%A5%E5%8F%A3) 同时进行事件监听与 OneBot API 操作
