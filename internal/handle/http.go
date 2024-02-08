@@ -1,10 +1,9 @@
-package api
+package handle
 
 import (
 	"errors"
 	"fmt"
 	global "github.com/IUnlimit/perpetua/internal"
-	"github.com/IUnlimit/perpetua/internal/handle"
 	"github.com/IUnlimit/perpetua/internal/logger"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
@@ -27,10 +26,10 @@ func GetWebSocketPort(ctx *gin.Context) {
 	}
 
 	// open new ws service, wait for minutes
-	handle.CreateWSInstance(port)
+	CreateWSInstance(port)
 	log.Info("Create new websocket connection on port: ", port)
 
-	utils.SendResponse(ctx,
+	utils.GoodResponse(ctx,
 		"port", port)
 }
 
