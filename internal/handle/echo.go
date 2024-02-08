@@ -22,7 +22,7 @@ func NewEchoMap() *EchoMap {
 }
 
 // JustPut echo
-func (em *EchoMap) JustPut(id string, data *global.MsgData) {
+func (em *EchoMap) JustPut(id string, data global.MsgData) {
 	queue := echoMap.dataMap[id]
 	if queue == nil {
 		queue = collections.NewQueue()
@@ -31,7 +31,7 @@ func (em *EchoMap) JustPut(id string, data *global.MsgData) {
 	queue.Put(data)
 }
 
-func (em *EchoMap) JustGet(id string, consumer func(*global.MsgData)) {
+func (em *EchoMap) JustGet(id string, consumer func(global.MsgData)) {
 	queue := echoMap.dataMap[id]
 	if queue == nil {
 		return
@@ -42,6 +42,6 @@ func (em *EchoMap) JustGet(id string, consumer func(*global.MsgData)) {
 		if !ok {
 			return
 		}
-		consumer(e.(*global.MsgData))
+		consumer(e.(global.MsgData))
 	}
 }

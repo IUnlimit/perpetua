@@ -111,9 +111,9 @@ func BadResponse(c *gin.Context, err error) {
 	})
 }
 
-// SendResponse Try to return data
+// GoodResponse Try to return data
 // entry: mapKey1, mapValue1 ...
-func SendResponse(c *gin.Context, entry ...any) {
+func GoodResponse(c *gin.Context, entry ...any) {
 	if len(entry)%2 != 0 {
 		BadResponse(c, errors.New(fmt.Sprintf("错误的 map 参数个数: %d", len(entry))))
 		return

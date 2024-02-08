@@ -145,7 +145,7 @@ func waitNTQQStartup(host string, port int) <-chan struct{} {
 			err := utils.CheckPort(host, port, time.Second*1)
 			if err != nil {
 				log.Debugf("Wait NTQQ startup: %v", err)
-				time.Sleep(time.Millisecond * 500)
+				time.Sleep(time.Millisecond * 1000)
 				continue
 			}
 			break
@@ -171,8 +171,8 @@ func doHeartbeat(handler *Handler, conn *websocket.Conn) error {
 		}
 
 		// update heartbeat time
-		heartbeat := deepcopy.Copy(global.Heartbeat).(*global.MsgData)
-		(*heartbeat)["time"] = time.Now().UnixMilli()
+		heartbeat := deepcopy.Copy(global.Heartbeat).(global.MsgData)
+		heartbeat["time"] = time.Now().UnixMilli()
 		handler.Lock.Lock()
 		err := conn.WriteJSON(heartbeat)
 		handler.Lock.Unlock()
@@ -195,7 +195,7 @@ func write2NTQQLoop(handle *Handler, conn *websocket.Conn) {
 		<-echoMap.Receive
 		for _, handler := range handleList {
 			id := handler.GetId()
-			echoMap.JustGet(id, func(data *global.MsgData) {
+			echoMap.JustGet(id, func(data global.MsgData) {
 				// TODO 断点续传,NTQQ重连尝试 echo赋值错误
 				log.Debugf("[NTQQ<-] Write to channel(id: %s) with message: %v", handler.GetId(), data)
 				err := conn.WriteJSON(data)
@@ -231,8 +231,7 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 
 		// heartbeat
 		if msgData["meta_event_type"] == "heartbeat" {
-			status := msgData /*["status"].(global.MsgData)*/
-			global.Heartbeat = &status
+			global.Heartbeat = msgData
 			continue
 		}
 
@@ -281,7 +280,6 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 		for _, handler := range receivers {
 			gopool.Go(func() {
 				// todo delete global message when handler Receive
-				// todo add global message cache ?
 				handler.AddMessage(uuid)
 				handler.Receive <- true
 			})
@@ -334,18 +332,47 @@ func readFromClientLoop(handler *Handler, conn *websocket.Conn, port int) {
 			continue
 		}
 
-		// sign with echo field
-		id := handler.GetId()
 		if msgData["echo"] == nil {
 			msgData["echo"] = ""
 		}
+
+		// intercept hooked requests
+		exist, err := interceptHookedRequests(msgData, handler)
+		if exist {
+			// touch hook method error, no need to break
+			if err != nil {
+				log.Errorf("[<-Client] Failed to intercept hooked requests: %v", msgData)
+			}
+			continue
+		}
+
+		// sign with echo field
+		id := handler.GetId()
 		echo := msgData["echo"].(string)
 		echo = fmt.Sprintf("%s#%s#%s", global.EchoPrefix, id, echo)
 		msgData["echo"] = echo
 		log.Debugf("[<-Client] Update client(port-%d) message echo: %s", port, echo)
-		echoMap.JustPut(id, &msgData)
+		echoMap.JustPut(id, msgData)
 		echoMap.Receive <- true
 	}
+}
+
+// @return continue loop
+func interceptHookedRequests(msgData global.MsgData, handler *Handler) (bool, error) {
+	resp, exist, err := TryTouchEnhanceHook(msgData)
+	if !exist {
+		return false, nil
+	}
+
+	uuid, err := globalCache.Append(resp)
+	if err != nil {
+		handler.WaitExitAll()
+		return true, err
+	}
+
+	handler.AddMessage(uuid)
+	handler.Receive <- true
+	return true, nil
 }
 
 // get first forwardImpl

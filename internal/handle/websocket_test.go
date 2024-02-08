@@ -2,8 +2,10 @@ package handle
 
 import (
 	"encoding/json"
+	"fmt"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/conf"
+	"github.com/IUnlimit/perpetua/internal/utils"
 	"testing"
 )
 
@@ -20,4 +22,9 @@ func TestUnmarshall(t *testing.T) {
 
 	_ = event["status"].(global.MsgData)
 	//fmt.Println(status)
+}
+
+func TestBuild(t *testing.T) {
+	response := utils.BuildWSGoodResponse("ok", "null")
+	fmt.Println(response)
 }

@@ -2,6 +2,7 @@ package global
 
 import (
 	"github.com/IUnlimit/perpetua/internal/model"
+	"os"
 	"regexp"
 )
 
@@ -17,6 +18,12 @@ const LgrFolder = "Lagrange.OneBot/"
 // EchoPrefix is prefix for generating echos
 const EchoPrefix = "perp"
 
+// Restart marks whether the end status of the process is restarted
+var Restart bool
+
+// OneBotProcess the currently running onebot process
+var OneBotProcess *os.Process
+
 // EchoRegx to match ${EchoPrefix}#${uuid}#client-echo
 var EchoRegx = regexp.MustCompile(`([^#]+)#([^#]+)#(.+)`)
 
@@ -27,4 +34,4 @@ var Config *model.Config
 var AppSettings *model.AppSettings
 
 // Heartbeat NTQQ heartbeat status
-var Heartbeat *MsgData
+var Heartbeat MsgData
