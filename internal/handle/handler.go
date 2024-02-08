@@ -53,6 +53,7 @@ func (h *Handler) WaitExitAll() {
 	for i := 0; i < h.waitCount; i++ {
 		h.wg.Done()
 	}
+	h.waitCount = 0
 }
 
 // AddWait 添加任务协程数
