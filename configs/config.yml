@@ -41,9 +41,9 @@ web-socket:
     # 是否开启功能
     enabled: false
     # 起始端口
-    start: 8000
+    start: 8100
     # 终止端口
-    end: 8010
+    end: 8110
 
 # 接收消息的最大缓存时间
 msg-expire-time: 30m
