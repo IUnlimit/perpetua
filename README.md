@@ -20,6 +20,7 @@ ______   _________________   _____/  |_ __ _______
 <p align="center">
    <a alt="License" href="https://www.gnu.org/licenses/agpl-3.0.en.html"><image src="https://img.shields.io/badge/license-AGPLv3-4EB1BA.svg"></image></a>
    <a alt="Release" href="https://github.com/IUnlimit/lagrange-go-distributed/releases"><image src="https://img.shields.io/github/release/IUnlimit/lagrange-go-distributed.svg"></image></a>
+   <a alt="Actions" href="https://github.com/IUnlimit/perpetua/actions"><image src="https://github.com/IUnlimit/perpetua/workflows/CI/badge.svg"></image></a>
 </p>
 
 <p align="center">
@@ -28,7 +29,7 @@ ______   _________________   _____/  |_ __ _______
 
 ### 注意事项
 
-本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，并临时提供了[签名服务器配置](https://github.com/IUnlimit/perpetua/blob/main/configs/appsettings.json#L9)项部分。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
+本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，并临时提供了签名服务器配置项部分。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
 
 ### 适配平台
 
@@ -52,13 +53,24 @@ ______   _________________   _____/  |_ __ _______
 ### 拓展实现
 
 <details>
-<summary>API</summary>
+<summary>新增支持 API</summary>
 
-| API                | 功能                                                                                       |
-|--------------------|------------------------------------------------------------------------------------------|
-| /get_ws_port       | [获取分配的ws端口](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_ws_port) |
+| API          | 功能                                                                                                 |
+|--------------|----------------------------------------------------------------------------------------------------|
+| /get_ws_port | [获取分配的ws端口](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_ws_port-获取分配的ws端口) |
 
 [获取分配的ws端口]: #
+
+</details>
+
+<details>
+<summary>功能增强 API</summary>
+
+| API          | 功能                                                                                                       |
+|--------------|----------------------------------------------------------------------------------------------------------|
+| /set_restart | [重启 OneBot 实现](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=set_restart-重启-onebot-实现) |
+
+[重启 OneBot 实现]: #
 
 </details>
 
