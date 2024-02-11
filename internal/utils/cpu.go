@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/logger"
 	"github.com/bytedance/gopkg/util/gopool"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"runtime"
@@ -71,4 +74,41 @@ func RunExec(mx *sync.Mutex) error {
 
 func IsWinPlatform() bool {
 	return strings.Contains(strings.ToLower(runtime.GOOS), "win")
+}
+
+func RandomAvailablePort(rangePort bool, start int, end int) (int, error) {
+	if !rangePort {
+		port, err := tryListen(0)
+		if err != nil {
+			return 0, err
+		}
+		return port, nil
+	}
+
+	portRange := end - start
+	if start < 512 || end > 65535 || portRange < 0 {
+		return 0, errors.New(fmt.Sprintf("invalid port range [%d-%d]", start, end))
+	}
+	if portRange == 0 {
+		return start, nil
+	}
+
+	for i := start; i <= end; i++ {
+		port, err := tryListen(i)
+		if err == nil {
+			return port, nil
+		}
+	}
+	return 0, errors.New(fmt.Sprintf("unavailable port in range [%d-%d]", start, end))
+}
+
+func tryListen(port int) (int, error) {
+	listen, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return 0, err
+	}
+	_ = listen.Close()
+
+	port = listen.Addr().(*net.TCPAddr).Port
+	return port, nil
 }

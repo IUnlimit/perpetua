@@ -47,9 +47,9 @@ func setRestartHook(msgData global.MsgData) (global.MsgData, error) {
 	gopool.Go(func() {
 		err := utils.RunExec(&mx)
 		if err != nil {
-			log.Fatalf("File instance recreate failed: %v", err)
+			log.Fatalf("[Enhance] File instance recreate failed: %v", err)
 		}
-		log.Info("Lagrange.OneBot restart success")
+		log.Info("[Enhance] Lagrange.OneBot restart success")
 	})
 
 	return utils.BuildWSGoodResponse("async", msgData["echo"].(string)), nil

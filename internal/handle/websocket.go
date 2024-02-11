@@ -22,6 +22,8 @@ var upgrader websocket.Upgrader
 // CreateWSInstance create new ws instance and wait client connection
 func CreateWSInstance(port int) {
 	var start bool
+	var handler *Handler
+	var server *http.Server
 	ctx := context.Background()
 	handleWebSocket := func(w http.ResponseWriter, r *http.Request) {
 		// upgrade HTTP to WebSocket conn
@@ -43,10 +45,11 @@ func CreateWSInstance(port int) {
 		}
 
 		start = true
-		handler := NewHandler(ctx)
+		handler = NewHandler(ctx)
+		handleSet.Add(handler)
 		handler.AddWait()
-		handleList = append(handleList, handler)
 		log.Infof("[Client] WebSocket connection established on port: %d with path: %s", port, r.URL.Path)
+		ClientOnlineStatusChangeEvent(handler, true)
 
 		// heartbeat
 		gopool.Go(func() {
@@ -73,10 +76,10 @@ func CreateWSInstance(port int) {
 
 		handler.WaitDone()
 		log.Info("[Client] WebSocket connection closed on port: ", port)
+		_ = server.Shutdown(ctx)
 	}
 
-	// todo remove handler
-	server := &http.Server{
+	server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: http.HandlerFunc(handleWebSocket),
 	}
@@ -91,11 +94,15 @@ func CreateWSInstance(port int) {
 		}
 	})
 
+	// exit logic
 	gopool.Go(func() {
 		err := server.ListenAndServe()
 		if err != nil {
 			log.Warnf("[Client] WebSocket connection(port: %d) exit with error: %v", port, err)
 		}
+		// remove handler
+		handleSet.Remove(handler)
+		ClientOnlineStatusChangeEvent(handler, false)
 	})
 }
 
@@ -193,7 +200,8 @@ func write2NTQQLoop(handle *Handler, conn *websocket.Conn) {
 			return
 		}
 		<-echoMap.Receive
-		for _, handler := range handleList {
+		for _, v := range handleSet.Iterator() {
+			handler := v.(*Handler)
 			id := handler.GetId()
 			echoMap.JustGet(id, func(data global.MsgData) {
 				// TODO 断点续传,NTQQ重连尝试 echo赋值错误
@@ -244,11 +252,11 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 		}
 
 		// broadcast message
-		receivers := make([]*Handler, 0)
+		receivers := make([]interface{}, 0)
 		echo := utils.GetDefault(msgData["echo"], "")
 		if len(echo) == 0 { // global
 			log.Debug("[NTQQ->] Received global NTQQ message: ", string(message))
-			receivers = append(receivers, handleList...)
+			receivers = append(receivers, handleSet.Iterator()...)
 		} else { // response
 			var id string
 			if len(echo) == len(global.EchoPrefix)+2+36 {
@@ -277,9 +285,9 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 			receivers = append(receivers, handler)
 		}
 		// when closed, staying dispatch
-		for _, handler := range receivers {
+		for _, v := range receivers {
 			gopool.Go(func() {
-				// todo delete global message when handler Receive
+				handler := v.(*Handler)
 				handler.AddMessage(uuid)
 				handler.Receive <- true
 			})

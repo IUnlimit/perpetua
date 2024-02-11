@@ -3,20 +3,24 @@ package handle
 import (
 	"context"
 	global "github.com/IUnlimit/perpetua/internal"
+	"github.com/IUnlimit/perpetua/pkg/concurrent"
 	collections "github.com/chenjiandongx/go-queue"
 	"github.com/google/uuid"
 	"sync"
 )
 
-// handleList stores handle.Handler for client websocket
-var handleList []*Handler
+// handleSet stores handle.Handler for client websocket
+var handleSet = concurrent.NewSet()
 
 type Handler struct {
 	Receive chan bool
 	Lock    sync.Mutex
 
-	id  string
-	ctx context.Context
+	id string
+	// TODO
+	// nullable, can only be actively set
+	name string
+	ctx  context.Context
 	// waiting goroutine count
 	waitCount int
 	// thread safe queue
@@ -71,6 +75,10 @@ func (h *Handler) GetId() string {
 	return h.id
 }
 
+func (h *Handler) GetName() string {
+	return h.name
+}
+
 func NewHandler(ctx context.Context) *Handler {
 	return &Handler{
 		ctx:       ctx,
@@ -82,7 +90,8 @@ func NewHandler(ctx context.Context) *Handler {
 }
 
 func FindHandler(id string) *Handler {
-	for _, handler := range handleList {
+	for _, v := range handleSet.Iterator() {
+		handler := v.(*Handler)
 		if handler.id == id {
 			return handler
 		}
