@@ -3,6 +3,7 @@
   - [快速开始](zh-cn/user/quick-start.md)
   - [拓展 API](zh-cn/user/enhance-api.md)
   - [拓展 Event](zh-cn/user/enhance-event.md)
+  - [拓展数据类型](zh-cn/user/enhance-model.md)
 
 - 开发者文档
   - [SDK](zh-cn/dev/sdk.md)
