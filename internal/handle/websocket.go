@@ -367,7 +367,11 @@ func readFromClientLoop(handler *Handler, conn *websocket.Conn, port int) {
 
 // @return continue loop
 func interceptHookedRequests(msgData global.MsgData, handler *Handler) (bool, error) {
-	resp, exist, err := TryTouchEnhanceHook(msgData)
+	resp, exist, err := TryTouchEnhanceHook(msgData, handler)
+	if err != nil {
+		return true, err
+	}
+	// todo jump able
 	if !exist {
 		return false, nil
 	}
