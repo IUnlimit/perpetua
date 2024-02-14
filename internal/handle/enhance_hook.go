@@ -85,17 +85,18 @@ func sendBroadcastData(msgData global.MsgData, trigger *Handler) (global.MsgData
 	params := msgData["params"].(map[string]interface{})
 	clients := params["clients"]
 	if clients == nil {
-		clients = make([]map[string]interface{}, 0)
-	} else if _, ok := clients.([]map[string]interface{}); !ok {
+		clients = make([]interface{}, 0)
+	} else if _, ok := clients.([]interface{}); !ok {
 		return utils.BuildWSBadResponse(fmt.Sprintf("unknown clients list: %s", clients), msgData["echo"].(string)), nil
 	}
 
 	targets := make([]interface{}, 0)
 	for _, v := range handleSet.Iterator() {
 		h := v.(*Handler)
-		for _, c := range clients.([]map[string]interface{}) {
-			appId := c["app_id"]
-			clientName := c["client_name"]
+		for _, c := range clients.([]interface{}) {
+			client := c.(map[string]interface{})
+			appId := client["app_id"]
+			clientName := client["client_name"]
 			if appId != nil && appId == h.id {
 				targets = append(targets, h)
 			} else if clientName != nil && clientName == h.name {

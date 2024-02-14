@@ -25,6 +25,7 @@ func TestUnmarshall(t *testing.T) {
 }
 
 func TestBuild(t *testing.T) {
-	response := utils.BuildWSGoodResponse("ok", "null")
+	response := utils.BuildWSResponse("ok", 0, "echo",
+		"uuid", "7657")
 	fmt.Println(response)
 }

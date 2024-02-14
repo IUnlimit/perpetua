@@ -12,7 +12,7 @@ func BuildWSGoodResponse(status string, echo string, entry ...any) global.MsgDat
 	if entry == nil {
 		return BuildWSResponse(status, 200, echo)
 	}
-	return BuildWSResponse(status, 200, echo, entry)
+	return BuildWSResponse(status, 200, echo, entry...)
 }
 
 func BuildWSBadResponse(status string, echo string) global.MsgData {
