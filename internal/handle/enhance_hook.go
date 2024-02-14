@@ -30,7 +30,7 @@ func TryTouchEnhanceHook(msgData global.MsgData, handler *Handler) (global.MsgDa
 		}
 		msgData["params"] = emptyParams
 	}
-	if hook := hookMap[msgData["action"].(string)]; hookMap != nil {
+	if hook := hookMap[msgData["action"].(string)]; hook != nil {
 		data, err := hook(msgData, handler)
 		if err != nil {
 			return nil, true, err
