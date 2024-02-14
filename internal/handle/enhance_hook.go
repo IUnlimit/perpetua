@@ -6,6 +6,7 @@ import (
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	"github.com/bytedance/gopkg/util/gopool"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -15,8 +16,10 @@ import (
 
 var mx sync.Mutex
 var hookMap = map[string]func(global.MsgData, *Handler) (global.MsgData, error){
-	"set_restart":     setRestartHook,
-	"set_client_name": setClientName,
+	"set_restart":                  setRestartHook,
+	"set_client_name":              setClientName,
+	"send_broadcast_data":          sendBroadcastData,
+	"send_broadcast_data_callback": sendBroadcastDataCallback,
 }
 var emptyParams = make(map[string]interface{}, 0)
 
@@ -74,5 +77,68 @@ func setClientName(msgData global.MsgData, handler *Handler) (global.MsgData, er
 	}
 
 	handler.name = name.(string)
+	return utils.BuildWSGoodResponse("ok", msgData["echo"].(string)), nil
+}
+
+// broadcast data
+func sendBroadcastData(msgData global.MsgData, trigger *Handler) (global.MsgData, error) {
+	params := msgData["params"].(map[string]interface{})
+	clients := params["clients"]
+	if clients == nil {
+		clients = make([]map[string]interface{}, 0)
+	} else if _, ok := clients.([]map[string]interface{}); !ok {
+		return utils.BuildWSBadResponse(fmt.Sprintf("unknown clients list: %s", clients), msgData["echo"].(string)), nil
+	}
+
+	targets := make([]interface{}, 0)
+	for _, v := range handleSet.Iterator() {
+		h := v.(*Handler)
+		for _, c := range clients.([]map[string]interface{}) {
+			appId := c["app_id"]
+			clientName := c["client_name"]
+			if appId != nil && appId == h.id {
+				targets = append(targets, h)
+			} else if clientName != nil && clientName == h.name {
+				targets = append(targets, h)
+			}
+		}
+	}
+
+	id := uuid.NewString()
+	data := utils.ReturnsNonNull(params["data"])
+	ClientBroadcastEvent(trigger, targets, id, data)
+	return utils.BuildWSGoodResponse("ok", msgData["echo"].(string),
+		"uuid", id), nil
+}
+
+// broadcast data callback
+func sendBroadcastDataCallback(msgData global.MsgData, trigger *Handler) (global.MsgData, error) {
+	params := msgData["params"].(map[string]interface{})
+	client := params["client"]
+	if _, ok := client.(map[string]interface{}); !ok {
+		return utils.BuildWSBadResponse(fmt.Sprintf("unknown client: %s", client), msgData["echo"].(string)), nil
+	}
+	id := params["uuid"]
+	if _, ok := id.(string); !ok || len(id.(string)) == 0 {
+		return utils.BuildWSBadResponse(fmt.Sprintf("broadcast callback api must specify uuid"), msgData["echo"].(string)), nil
+	}
+
+	var target interface{}
+	appId := client.(map[string]interface{})["app_id"]
+	clientName := client.(map[string]interface{})["client_name"]
+	for _, v := range handleSet.Iterator() {
+		h := v.(*Handler)
+		if appId != nil && appId == h.id {
+			target = h
+		} else if clientName != nil && clientName == h.name {
+			target = h
+		}
+	}
+	if target == nil {
+		return utils.BuildWSBadResponse(fmt.Sprintf("can't find target client: %s", client), msgData["echo"].(string)), nil
+	}
+
+	data := utils.ReturnsNonNull(params["data"])
+	ClientBroadcastEventCallback(trigger, target, id.(string), data)
 	return utils.BuildWSGoodResponse("ok", msgData["echo"].(string)), nil
 }

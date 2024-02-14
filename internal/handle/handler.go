@@ -17,7 +17,6 @@ type Handler struct {
 	Lock    sync.Mutex
 
 	id string
-	// TODO
 	// nullable, can only be actively set
 	name string
 	ctx  context.Context

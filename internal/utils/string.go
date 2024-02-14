@@ -24,3 +24,10 @@ func GetDefault(data any, def string) string {
 	}
 	return data.(string)
 }
+
+func ReturnsNonNull(data interface{}) string {
+	if data == nil {
+		return ""
+	}
+	return data.(string)
+}
