@@ -102,7 +102,9 @@ func CreateWSInstance(port int) {
 		}
 		// remove handler
 		handleSet.Remove(handler)
-		ClientOnlineStatusChangeEvent(handler, false)
+		if start {
+			ClientOnlineStatusChangeEvent(handler, false)
+		}
 	})
 }
 

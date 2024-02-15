@@ -88,6 +88,8 @@ func sendBroadcastData(msgData global.MsgData, trigger *Handler) (global.MsgData
 		clients = make([]interface{}, 0)
 	} else if _, ok := clients.([]interface{}); !ok {
 		return utils.BuildWSBadResponse(fmt.Sprintf("unknown clients list: %s", clients), msgData["echo"].(string)), nil
+	} else if len(clients.([]interface{})) == 0 {
+		return utils.BuildWSBadResponse(fmt.Sprintf("empty clients list"), msgData["echo"].(string)), nil
 	}
 
 	targets := make([]interface{}, 0)

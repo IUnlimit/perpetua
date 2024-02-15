@@ -10,9 +10,9 @@ func BuildWSGoodResponse(status string, echo string, entry ...any) global.MsgDat
 		return BuildWSBadResponse(fmt.Sprintf("错误的 map 参数个数: %d", len(entry)), echo)
 	}
 	if entry == nil {
-		return BuildWSResponse(status, 200, echo)
+		return BuildWSResponse(status, 0, echo)
 	}
-	return BuildWSResponse(status, 200, echo, entry...)
+	return BuildWSResponse(status, 0, echo, entry...)
 }
 
 func BuildWSBadResponse(status string, echo string) global.MsgData {

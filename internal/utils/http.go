@@ -130,6 +130,14 @@ func GoodResponse(c *gin.Context, entry ...any) {
 	})
 }
 
+func GoodResponseArray(c *gin.Context, array any) {
+	c.JSON(http.StatusOK, model.Response{
+		Status:  "ok",
+		RetCode: 0,
+		Data:    array,
+	})
+}
+
 func download(resp *http.Response, filePath string, fileSize int64) error {
 	if fileSize == -1 {
 		fileSize = resp.ContentLength

@@ -41,8 +41,8 @@ func GetOnlineClients(ctx *gin.Context) {
 			ClientName: handler.GetName(),
 		})
 	}
-	utils.GoodResponse(ctx,
-		"clients", &clients)
+	utils.GoodResponseArray(ctx,
+		clients)
 }
 
 // EnableHttpService enable http server
