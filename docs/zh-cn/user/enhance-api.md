@@ -53,9 +53,7 @@ Perpetua 提供的 API 一共分为两种类型
 
 **响应数据**
 
-| 字段名       | 数据类型     | 说明      |
-|-----------|----------|---------|
-| `clients` | Client[] | 在线客户端列表 |
+响应内容为 JSON 数组，每个元素定义见 [Client](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-model?id=client)
 
 ## ws 调用
 
@@ -103,7 +101,7 @@ Perpetua 提供的 API 一共分为两种类型
 
 ### `send_broadcast_data` 发送客户端广播数据
 
-从当前客户端向其他客户端广播数据，可指定目标客户端
+从当前客户端向其他客户端广播数据，需指定目标客户端
 
 - type: `新增支持`
 
