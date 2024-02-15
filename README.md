@@ -37,11 +37,13 @@ ______   _________________   _____/  |_ __ _______
 - [x] MacOS
 - [x] Windows
 
-### OneBot 协议支持
+### 协议支持
 
-> 为了将 perpetua API 与 OneBot 实现作区分，perpetua 仅提供正向 WebSocket 端口作 OneBot 协议接口，拓展 API 实现使用 WebAPI 的形式供给调用。详见 [拓展实现-API](https://github.com/IUnlimit/perpetua?tab=readme-ov-file#%E6%8B%93%E5%B1%95%E5%AE%9E%E7%8E%B0)
-
-- [x] 正向 WebSocket
+- OneBot
+  - [x] 正向 WebSocket
+  - [ ] 反向 WebSocket
+- Satori
+  - [ ] WebAPI
 
 ### 拓展支持
 
@@ -53,24 +55,24 @@ ______   _________________   _____/  |_ __ _______
 ### 拓展实现
 
 <details>
-<summary>新增支持 API</summary>
 
-| API          | 功能                                                                                                 |
-|--------------|----------------------------------------------------------------------------------------------------|
-| /get_ws_port | [获取分配的ws端口](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_ws_port-获取分配的ws端口) |
+<summary>拓展 API</summary>
+
+| API                          | 功能                                                                                                                      |
+|------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| get_ws_port                  | [获取分配的ws端口](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_ws_port-获取分配的ws端口)                      |
+| get_online_clients           | [获取当前在线客户端列表](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_online_clients-获取当前在线客户端列表)           |
+| set_restart                  | [重启 OneBot 实现](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=set_restart-重启-onebot-实现)                |
+| set_client_name              | [设置当前客户端名称](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=set_client_name-设置当前客户端名称)                  |
+| send_broadcast_data          | [发送客户端广播数据](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=send_broadcast_data-发送客户端广播数据)              |
+| send_broadcast_data_callback | [发送客户端广播数据回调](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=send_broadcast_data_callback-发送客户端广播数据回调) |
 
 [获取分配的ws端口]: #
-
-</details>
-
-<details>
-<summary>功能增强 API</summary>
-
-| API          | 功能                                                                                                       |
-|--------------|----------------------------------------------------------------------------------------------------------|
-| /set_restart | [重启 OneBot 实现](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=set_restart-重启-onebot-实现) |
-
+[获取当前在线客户端列表]: #
 [重启 OneBot 实现]: #
+[设置当前客户端名称]: #
+[发送客户端广播数据]: #
+[发送客户端广播数据回调]: #
 
 </details>
 
