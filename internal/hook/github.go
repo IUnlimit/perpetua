@@ -59,7 +59,14 @@ func GetArtifactsUrls(owner string, repo string, params map[string]string) ([]*m
 		return nil, errors.New("can't match any artifact")
 	}
 
-	return artifact.Artifacts, nil
+	artifacts := make([]*model.Artifact, 0)
+	for _, entity := range artifact.Artifacts {
+		if len(artifacts) != 0 && (entity.WorkflowRun.ID != artifacts[0].WorkflowRun.ID) {
+			break
+		}
+		artifacts = append(artifacts, entity)
+	}
+	return artifacts, nil
 }
 
 func GetAuthorizedFile(url string, filePath string, fileSize int64) error {

@@ -33,7 +33,7 @@ func updateNTQQImpl(owner string, repo string, zipPath string, lgrFolder string,
 	artifacts, err := hook.GetArtifactsUrls(
 		owner, repo,
 		map[string]string{
-			"per_page": "7",
+			"per_page": "32",
 		})
 	if err != nil {
 		err = fmt.Errorf("artifact get excption: %v", err)
