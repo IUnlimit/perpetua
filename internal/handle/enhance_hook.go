@@ -76,6 +76,13 @@ func setClientName(msgData global.MsgData, handler *Handler) (global.MsgData, er
 		return utils.BuildWSBadResponse(fmt.Sprintf("empty or unsupport name: %s", name), msgData["echo"].(string)), nil
 	}
 
+	// unique check
+	for _, v := range handleSet.Iterator() {
+		if name == v.(*Handler).name {
+			return utils.BuildWSBadResponse(fmt.Sprintf("duplicate client name (conflict handler id: %s)", v.(*Handler).id), msgData["echo"].(string)), nil
+		}
+	}
+
 	handler.name = name.(string)
 	return utils.BuildWSGoodResponse("ok", msgData["echo"].(string)), nil
 }
