@@ -23,4 +23,7 @@ func EnableAgent() {
 		}
 		global.Restart = false
 	}
+	if global.OneBotProcess != nil {
+		_ = global.OneBotProcess.Kill()
+	}
 }
