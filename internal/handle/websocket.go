@@ -288,8 +288,8 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 		}
 		// when closed, staying dispatch
 		for _, v := range receivers {
+			handler := v.(*Handler)
 			gopool.Go(func() {
-				handler := v.(*Handler)
 				handler.AddMessage(uuid)
 				handler.Receive <- true
 			})
