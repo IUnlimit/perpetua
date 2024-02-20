@@ -29,7 +29,7 @@ ______   _________________   _____/  |_ __ _______
 
 ### 注意事项
 
-本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，并临时提供了签名服务器配置项部分。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
+本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，您需自行解决签名服务器的配置问题。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
 
 ### 适配平台
 
