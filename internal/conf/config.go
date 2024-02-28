@@ -67,6 +67,7 @@ func UpdateConfig(artifact *model.Artifact) error {
 
 	config := global.Config
 	config.NTQQImpl = &model.NTQQImpl{
+		Update:    config.NTQQImpl.Update,
 		ID:        artifact.ID,
 		Platform:  platform,
 		UpdatedAt: artifact.UpdatedAt,
