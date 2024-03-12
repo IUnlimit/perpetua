@@ -309,6 +309,7 @@ func write2ClientLoop(handler *Handler, conn *websocket.Conn, port int) {
 			if handler.ShouldExit() {
 				return
 			}
+			log.Debugf("[->Client] Try to send message to client(id-%s, name-%s)", handler.id, handler.name)
 			handler.Lock.Lock()
 			err := conn.WriteJSON(data)
 			handler.Lock.Unlock()
