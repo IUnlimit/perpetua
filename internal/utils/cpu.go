@@ -16,6 +16,16 @@ import (
 	"sync"
 )
 
+func ContainsArgs(flag string) bool {
+	args := os.Args[1:]
+	for _, arg := range args {
+		if strings.Contains(arg, flag) {
+			return true
+		}
+	}
+	return false
+}
+
 func RunExec(mx *sync.Mutex) error {
 	execName := "Lagrange.OneBot"
 	if IsWinPlatform() {

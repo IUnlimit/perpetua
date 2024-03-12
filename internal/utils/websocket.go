@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	global "github.com/IUnlimit/perpetua/internal"
+	"github.com/IUnlimit/perpetua/internal/model"
 )
 
 func BuildWSGoodResponse(status string, echo string, entry ...any) global.MsgData {
@@ -31,4 +33,14 @@ func BuildWSResponse(status string, retcode int32, echo string, entry ...any) gl
 		"data":    m,
 		"echo":    echo,
 	}
+}
+
+// GetForwardImpl get first forwardImpl from appsettings.json
+func GetForwardImpl() (*model.Implementation, error) {
+	for _, impl := range global.AppSettings.Implementations {
+		if impl.Type == "ForwardWebSocket" {
+			return impl, nil
+		}
+	}
+	return nil, errors.New("can't find forward websocket impl")
 }

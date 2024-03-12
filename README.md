@@ -1,13 +1,9 @@
 # perpetua
 
-```
-                                   __
-______   _________________   _____/  |_ __ _______
-\____ \_/ __ \_  __ \____ \_/ __ \   __\  |  \__  \
-|  |_> >  ___/|  | \/  |_> >  ___/|  | |  |  // __ \_
-|   __/ \___  >__|  |   __/ \___  >__| |____/(____  /
-|__|        \/      |__|        \/                \/ 
-```
+<p align="center">
+  <img src="./docs/icon.png" alt="icon"/>
+</p>
+
 <p align="center">
     本项目为 OneBot 协议实现下机器人实例与用户服务间第三方消息代理中间件。通过 WebSocket 代理与额外的 WebAPI 接口，提供单一QQ账号下多端接入，事件回调、消息互通等功能实现。并配备常规流量治理功能包括服务注册发现、熔断限流、负载均衡。
 </p>
@@ -29,7 +25,7 @@ ______   _________________   _____/  |_ __ _______
 
 ### 注意事项
 
-本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，并临时提供了签名服务器配置项部分。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
+本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，您需自行解决签名服务器的配置问题。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
 
 ### 适配平台
 
@@ -41,7 +37,7 @@ ______   _________________   _____/  |_ __ _______
 
 - OneBot
   - [x] 正向 WebSocket
-  - [ ] 反向 WebSocket
+  - [x] 反向 WebSocket
 - Satori
   - [ ] WebAPI
 

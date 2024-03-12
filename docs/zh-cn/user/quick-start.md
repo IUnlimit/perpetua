@@ -56,7 +56,7 @@ Windows 用户请使用 `powershell` 运行本项目，以避免直接运行 `ex
       "Microsoft.Hosting.Lifetime": "Information"
     }
   },
-  // 验证服务器，必填项（v0.0.4 后自动配置
+  // 验证服务器，必填项
   "SignServerUrl": "",
   "Account": {
     // qq 账户，若不填则使用扫码登陆

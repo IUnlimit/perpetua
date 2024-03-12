@@ -45,5 +45,14 @@ web-socket:
     # 终止端口
     end: 8110
 
+# 反向 websocket 相关配置
+reverse-web-socket:
+  # 是否开启功能
+  enabled: true
+  # 上报地址
+  url: 'ws://127.0.0.1:8000/onebot/v11/ws'
+  # AccessToken
+  access-token: ''
+
 # 接收消息的最大缓存时间
 msg-expire-time: 30m
