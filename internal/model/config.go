@@ -3,11 +3,12 @@ package model
 import "time"
 
 type Config struct {
-	Log           *Log          `yaml:"log"`
-	NTQQImpl      *NTQQImpl     `yaml:"ntqq-impl"`
-	Http          *Http         `yaml:"http"`
-	WebSocket     *WebSocket    `yaml:"web-socket"`
-	MsgExpireTime time.Duration `yaml:"msg-expire-time"`
+	Log              *Log              `yaml:"log"`
+	NTQQImpl         *NTQQImpl         `yaml:"ntqq-impl"`
+	Http             *Http             `yaml:"http"`
+	WebSocket        *WebSocket        `yaml:"web-socket"`
+	ReverseWebSocket *ReverseWebSocket `yaml:"reverse-web-socket"`
+	MsgExpireTime    time.Duration     `yaml:"msg-expire-time"`
 }
 
 type Log struct {
@@ -31,6 +32,12 @@ type Http struct {
 type WebSocket struct {
 	Timeout   time.Duration `yaml:"timeout,omitempty"`
 	RangePort *RangePort    `yaml:"range-port"`
+}
+
+type ReverseWebSocket struct {
+	Enabled     bool   `yaml:"enabled,omitempty"`
+	Url         string `yaml:"url"`
+	AccessToken string `yaml:"access-token"`
 }
 
 type RangePort struct {

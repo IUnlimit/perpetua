@@ -37,7 +37,7 @@
 
 - OneBot
   - [x] 正向 WebSocket
-  - [ ] 反向 WebSocket
+  - [x] 反向 WebSocket
 - Satori
   - [ ] WebAPI
 
