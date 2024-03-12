@@ -14,7 +14,7 @@ import (
 // Configure NTQQ settings using config.yml
 func Configure() {
 	isWindows := utils.IsWinPlatform()
-	if isWindows { // TODO add env flag to jump confirm
+	if isWindows && !utils.ContainsArgs("faststart") {
 		confirmShell()
 	}
 
@@ -48,7 +48,7 @@ func Start() {
 }
 
 func confirmShell() {
-	log.Warn("检测到 Windows 环境，请确保使用 powershell 或 bat 脚本运行程序。\n文档：https://iunlimit.github.io/perpetua\n是否继续？(y/n): ")
+	log.Warn("检测到 Windows 环境，请确保使用 powershell 或 bat 脚本运行程序（使用命令行参数 faststart 即可跳过本提示）。\n文档：https://iunlimit.github.io/perpetua\n是否继续？(y/n): ")
 	var input string
 	_, _ = fmt.Scanln(&input)
 	if input == "n" || input == "N" {
