@@ -14,7 +14,7 @@ log:
   force-new: false
   # 日志等级
   #   trace debug info warn error
-  level: "info"
+  level: "debug"
   # 日志存活时间，到期新建log文件
   aging: 24h
   # 是否开启控制台颜色
@@ -48,9 +48,9 @@ web-socket:
 # 反向 websocket 相关配置
 reverse-web-socket:
   # 是否开启功能
-  enabled: true
+  enabled: false
   # 上报地址
-  url: 'ws://127.0.0.1:8000/onebot/v11/ws'
+  url: 'ws://127.0.0.1:8800/onebot/v11/ws/'
   # AccessToken
   access-token: ''
 

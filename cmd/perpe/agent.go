@@ -21,7 +21,7 @@ func EnableAgent() {
 		for {
 			err := handle.TryReverseWSInstance(config.Url, config.AccessToken)
 			if err != nil {
-				log.Infof("Failed to establish reverse websocket connection: %v", err)
+				log.Infof("Tried to establish reverse websocket connection failed: %v", err)
 			}
 			time.Sleep(1 * time.Second)
 		}

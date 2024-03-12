@@ -3,6 +3,7 @@ package handle
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/utils"
@@ -20,10 +21,24 @@ var upgrader websocket.Upgrader
 
 // TryReverseWSInstance try to establish reverse ws client connection
 func TryReverseWSInstance(wsUrl string, accessToken string) error {
-	request, _ := http.NewRequest("GET", "", nil)
+	impl, err := utils.GetForwardImpl()
+	if err != nil {
+		return err
+	}
+	<-utils.WaitNTQQStartup(impl.Host, impl.Port, nil)
+	<-utils.WaitCondition(time.Duration(2000), func() error {
+		if global.Heartbeat == nil {
+			return errors.New("not init yet")
+		}
+		return nil
+	}, nil)
+
+	request, _ := http.NewRequest("GET", wsUrl, nil)
 	if len(accessToken) != 0 {
 		request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	}
+	request.Header.Set("X-Self-ID", strconv.Itoa(int(global.Heartbeat["self_id"].(float64))))
+	request.Header.Set("X-Client-Role", "Universal")
 	log.Infof("[Client] Start connecting to reverse-websocket: %s with headers: %s", wsUrl, request.Header)
 
 	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, request.Header)

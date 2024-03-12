@@ -12,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
-	"time"
 )
 
 func CreateNTQQWebSocket() error {
@@ -28,7 +27,9 @@ func CreateNTQQWebSocket() error {
 	wsUrl := fmt.Sprintf("ws://%s:%d/%s", impl.Host, impl.Port, impl.Suffix)
 
 	log.Info("[NTQQ] Start connecting to NTQQ websocket: ", wsUrl)
-	<-waitNTQQStartup(impl.Host, impl.Port)
+	<-utils.WaitNTQQStartup(impl.Host, impl.Port, func(err2 error) {
+		log.Debugf("Wait NTQQ startup: %v", err2)
+	})
 	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, request.Header)
 	if err != nil {
 		return err
@@ -50,26 +51,6 @@ func CreateNTQQWebSocket() error {
 		return err
 	}
 	return nil
-}
-
-// wait NTQQ startup
-func waitNTQQStartup(host string, port int) <-chan struct{} {
-	done := make(chan struct{})
-
-	gopool.Go(func() {
-		for {
-			err := utils.CheckPort(host, port, time.Second*1)
-			if err != nil {
-				log.Debugf("Wait NTQQ startup: %v", err)
-				time.Sleep(time.Millisecond * 1000)
-				continue
-			}
-			break
-		}
-		close(done)
-	})
-
-	return done
 }
 
 func write2NTQQLoop(handle *Handler, conn *websocket.Conn) {
