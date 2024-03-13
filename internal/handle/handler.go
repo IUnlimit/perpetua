@@ -4,8 +4,9 @@ import (
 	"context"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/pkg/concurrent"
-	"github.com/IUnlimit/perpetua/pkg/queue"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
+	"github.com/theodesp/blockingQueues"
 	"sync"
 )
 
@@ -21,18 +22,25 @@ type Handler struct {
 	ctx  context.Context
 	// waiting goroutine count
 	waitCount  int
-	blockQueue *queue.RingQueue
+	blockQueue *blockingQueues.BlockingQueue
 	wg         sync.WaitGroup
 }
 
 func (h *Handler) AddMessage(uuid string) {
-	h.blockQueue.Enqueue(uuid)
+	_, err := h.blockQueue.Put(uuid)
+	if err != nil {
+		log.Errorf("Error occurred when #AddMessage: %v", err)
+	}
 }
 
 // GetMessage from local cache
 func (h *Handler) GetMessage(consumer func(data global.MsgData)) {
 	for {
-		e := h.blockQueue.Dequeue()
+		e, err := h.blockQueue.Get()
+		if err != nil {
+			log.Errorf("Error occurred when #GetMessage: %v", err)
+			return
+		}
 		data, _ := globalCache.cache.Get(e)
 		if data == nil {
 			continue
@@ -74,11 +82,12 @@ func (h *Handler) GetName() string {
 }
 
 func NewHandler(ctx context.Context) *Handler {
+	queue, _ := blockingQueues.NewArrayBlockingQueue(512)
 	return &Handler{
 		ctx:        ctx,
 		id:         uuid.NewString(),
 		waitCount:  0,
-		blockQueue: queue.NewRingQueue(1024),
+		blockQueue: queue,
 	}
 }
 
