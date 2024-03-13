@@ -74,7 +74,6 @@ func broadcast(trigger *Handler, targets []interface{}, jumpTrigger bool, msgDat
 		}
 		gopool.Go(func() {
 			handler.AddMessage(uuid)
-			handler.Receive <- true
 		})
 	}
 }

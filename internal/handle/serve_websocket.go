@@ -148,7 +148,6 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 			handler := v.(*Handler)
 			gopool.Go(func() {
 				handler.AddMessage(uuid)
-				handler.Receive <- true
 			})
 		}
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/pkg/concurrent"
-	collections "github.com/chenjiandongx/go-queue"
+	"github.com/IUnlimit/perpetua/pkg/queue"
 	"github.com/google/uuid"
 	"sync"
 )
@@ -13,28 +13,26 @@ import (
 var handleSet = concurrent.NewSet()
 
 type Handler struct {
-	Receive chan bool
-	Lock    sync.Mutex
+	Lock sync.Mutex
 
 	id string
 	// nullable, can only be actively set
 	name string
 	ctx  context.Context
 	// waiting goroutine count
-	waitCount int
-	// thread safe queue
-	queue *collections.Queue
-	wg    sync.WaitGroup
+	waitCount  int
+	blockQueue *queue.RingQueue
+	wg         sync.WaitGroup
 }
 
 func (h *Handler) AddMessage(uuid string) {
-	h.queue.Put(uuid)
+	h.blockQueue.Enqueue(uuid)
 }
 
 // GetMessage from local cache
 func (h *Handler) GetMessage(consumer func(data global.MsgData)) {
 	for {
-		e, ok := h.queue.Get()
+		e, ok := h.blockQueue.Dequeue().(string)
 		if !ok {
 			return
 		}
@@ -80,11 +78,10 @@ func (h *Handler) GetName() string {
 
 func NewHandler(ctx context.Context) *Handler {
 	return &Handler{
-		ctx:       ctx,
-		id:        uuid.NewString(),
-		Receive:   make(chan bool),
-		waitCount: 0,
-		queue:     collections.NewQueue(),
+		ctx:        ctx,
+		id:         uuid.NewString(),
+		waitCount:  0,
+		blockQueue: queue.NewRingQueue(1024),
 	}
 }
 

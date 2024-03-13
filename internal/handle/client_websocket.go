@@ -163,7 +163,6 @@ func write2ClientLoop(handler *Handler, conn *websocket.Conn, port int) {
 			return
 		}
 
-		<-handler.Receive
 		handler.GetMessage(func(data global.MsgData) {
 			if handler.ShouldExit() {
 				return
@@ -245,7 +244,6 @@ func interceptHookedRequests(msgData global.MsgData, handler *Handler) (bool, er
 	}
 
 	handler.AddMessage(uuid)
-	handler.Receive <- true
 	return true, nil
 }
 
