@@ -32,10 +32,7 @@ func (h *Handler) AddMessage(uuid string) {
 // GetMessage from local cache
 func (h *Handler) GetMessage(consumer func(data global.MsgData)) {
 	for {
-		e, ok := h.blockQueue.Dequeue().(string)
-		if !ok {
-			return
-		}
+		e := h.blockQueue.Dequeue()
 		data, _ := globalCache.cache.Get(e)
 		if data == nil {
 			continue
