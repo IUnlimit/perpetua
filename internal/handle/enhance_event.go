@@ -3,7 +3,6 @@ package handle
 import (
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/model"
-	"github.com/bytedance/gopkg/util/gopool"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -72,8 +71,6 @@ func broadcast(trigger *Handler, targets []interface{}, jumpTrigger bool, msgDat
 		if jumpTrigger && handler.GetId() == trigger.GetId() {
 			continue
 		}
-		gopool.Go(func() {
-			handler.AddMessage(uuid)
-		})
+		handler.AddMessage(uuid)
 	}
 }
