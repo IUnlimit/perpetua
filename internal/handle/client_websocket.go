@@ -14,37 +14,37 @@ import (
 	"time"
 )
 
-// ReadAndWriteClient read loop and write loop
-type ReadAndWriteClient struct {
+// ReadThenWriteClient read loop and write loop
+type ReadThenWriteClient struct {
 	addr    string
 	conn    *websocket.Conn
 	handler *Handler
 }
 
-func NewReadAndWriteClient(conn *websocket.Conn, handler *Handler) *ReadAndWriteClient {
+func NewReadThenWriteClient(conn *websocket.Conn, handler *Handler) *ReadThenWriteClient {
 	addr := conn.LocalAddr().String()
-	return &ReadAndWriteClient{
+	return &ReadThenWriteClient{
 		addr:    addr,
 		conn:    conn,
 		handler: handler,
 	}
 }
 
-func (raw *ReadAndWriteClient) writeFunc(data global.MsgData) error {
-	return raw.conn.WriteJSON(data)
+func (rtw *ReadThenWriteClient) writeFunc(data global.MsgData) error {
+	return rtw.conn.WriteJSON(data)
 }
 
-func (raw *ReadAndWriteClient) readFunc() ([]byte, error) {
-	_, bytes, err := raw.conn.ReadMessage()
+func (rtw *ReadThenWriteClient) readFunc() ([]byte, error) {
+	_, bytes, err := rtw.conn.ReadMessage()
 	return bytes, err
 }
 
-func (raw *ReadAndWriteClient) getHandler() *Handler {
-	return raw.handler
+func (rtw *ReadThenWriteClient) getHandler() *Handler {
+	return rtw.handler
 }
 
-func (raw *ReadAndWriteClient) getUrl() string {
-	return raw.addr
+func (rtw *ReadThenWriteClient) getUrl() string {
+	return rtw.addr
 }
 
 var upgrader websocket.Upgrader
@@ -79,7 +79,7 @@ func TryReverseWebsocket(wsUrl string, accessToken string) error {
 	defer conn.Close()
 
 	handler := NewHandler(context.Background())
-	client := NewReadAndWriteClient(conn, handler)
+	client := NewReadThenWriteClient(conn, handler)
 	ConfigureRAWClientHandler(client)
 	return nil
 }
@@ -111,7 +111,7 @@ func CreateWSInstance(port int) {
 
 		start = true
 		handler = NewHandler(ctx)
-		client := NewReadAndWriteClient(conn, handler)
+		client := NewReadThenWriteClient(conn, handler)
 		ConfigureRAWClientHandler(client)
 		_ = server.Shutdown(ctx)
 	}

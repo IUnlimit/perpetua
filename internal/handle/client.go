@@ -29,7 +29,7 @@ func ConfigureRWWClientHandler(c *ReadWithWriteClient) {
 }
 
 // ConfigureRAWClientHandler configure and link handler to connection
-func ConfigureRAWClientHandler(c *ReadAndWriteClient) {
+func ConfigureRAWClientHandler(c *ReadThenWriteClient) {
 	configureClientHandlerFunc(c, func() {
 		// write to client
 		// perp -> client
@@ -66,7 +66,8 @@ func configureClientHandlerFunc(c Client, rwFunc func()) {
 		handler.AddWait()
 		err := doHeartbeat(c)
 		if err != nil {
-			log.Debugf("[Client] Error occurred when heartbeat on %s: %v", url, err)
+			log.Infof("[Client] Error occurred when heartbeat on %s: %v", url, err)
+			handler.WaitExitAll()
 		}
 	})
 
@@ -92,7 +93,7 @@ func writeAndReadClientLoop(c *ReadWithWriteClient) {
 			}
 			log.Debugf("[<->Client] Try to send message to client(id-%s, name-%s)", handler.id, handler.name)
 			handler.Lock.Lock()
-			message, err := c.writeAndReadFunc(data)
+			message, err := c.writeWithReadFunc(data)
 			handler.Lock.Unlock()
 			addEchoThenServe("[<->Client]", c, func() ([]byte, error) {
 				return message, err
@@ -204,6 +205,9 @@ func addEchoThenServe(prefix string, c Client, messageSupplier func() ([]byte, e
 	}
 	log.Debugf("%s Received message with url-%s: %s", prefix, c.getUrl(), string(message))
 
+	if len(message) == 0 {
+		return
+	}
 	var msgData global.MsgData
 	err = json.Unmarshal(message, &msgData)
 	if err != nil {

@@ -47,11 +47,13 @@ func EnableAgent() {
 				continue
 			}
 			gopool.Go(func() {
-				err := handle.TryPostHttp(httpPost.Url, httpPost.Secret)
-				if err != nil {
-					log.Infof("Attempt to establish http post connection failed: %v", err)
+				for {
+					err := handle.TryPostHttp(httpPost.Url, httpPost.Secret)
+					if err != nil {
+						log.Infof("Attempt to establish http post connection failed: %v", err)
+					}
+					time.Sleep(1 * time.Second)
 				}
-				time.Sleep(1 * time.Second)
 			})
 		}
 	})

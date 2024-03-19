@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -31,7 +32,7 @@ func NewReadWithWriteClient(url string, secret string, handler *Handler) *ReadWi
 	}
 }
 
-func (rww *ReadWithWriteClient) writeAndReadFunc(data global.MsgData) ([]byte, error) {
+func (rww *ReadWithWriteClient) writeWithReadFunc(data global.MsgData) ([]byte, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -51,6 +52,10 @@ func (rww *ReadWithWriteClient) writeAndReadFunc(data global.MsgData) ([]byte, e
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if !(200 <= resp.StatusCode && resp.StatusCode <= 299) {
+		return nil, errors.New(fmt.Sprintf("error response status: %d", resp.StatusCode))
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -59,7 +64,7 @@ func (rww *ReadWithWriteClient) writeAndReadFunc(data global.MsgData) ([]byte, e
 }
 
 func (rww *ReadWithWriteClient) writeFunc(data global.MsgData) error {
-	_, err := rww.writeAndReadFunc(data)
+	_, err := rww.writeWithReadFunc(data)
 	return err
 }
 
