@@ -47,12 +47,17 @@ web-socket:
 
 # 反向 websocket 相关配置
 reverse-web-socket:
-  # 是否开启功能
-  enabled: false
-  # 上报地址
-  url: 'ws://127.0.0.1:8800/onebot/v11/ws/'
-  # AccessToken
-  access-token: ''
+    # 上报地址
+  - url: ''
+    # AccessToken
+    access-token: ''
+
+# http post 相关配置
+http-post:
+    # 上报地址
+  - url: ''
+    # HMAC 签名密匙
+    secret: ''
 
 # 接收消息的最大缓存时间
 msg-expire-time: 30m

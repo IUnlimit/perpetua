@@ -5,6 +5,7 @@ import (
 	collections "github.com/chenjiandongx/go-queue"
 )
 
+// todo replace by block queue
 var echoMap *EchoMap
 
 // EchoMap 利用 echo 完成 NTQQ -> client 消息调度 (发送时标记echo)

@@ -11,6 +11,7 @@ import (
 )
 
 // handleSet stores handle.Handler for client websocket
+// todo replace to client set
 var handleSet = concurrent.NewSet()
 
 type Handler struct {
