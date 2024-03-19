@@ -25,7 +25,7 @@
 
 ### 注意事项
 
-本项目内置了NTQQ实现（Lagrange.OneBot）的分发与运行，您需自行解决签名服务器的配置问题。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
+本项目内置了NTQQ实现（`Lagrange.OneBot`）的分发与运行，您需自行解决签名服务器的配置问题。若您在使用时有任何疑问，随时欢迎进群咨询。Group: [863522624](https://qm.qq.com/cgi-bin/qm/qr?k=Xby1-vbC43Hgv4TXd8LcI889zEhwkq_a&jump_from=webapi&authKey=SmcLCk3eBSQyC0ylq9CiwTafuDk7ls+5QrNDB2//hjTZY6sCTdCz/RKzRwVRrN4J)
 
 ### 适配平台
 
@@ -35,9 +35,14 @@
 
 ### 协议支持
 
+> `perpetua` 作为服务端时，其他客户端需要使用特定的 [API](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_ws_port-获取分配的ws端口) 通过服务发现才能使用资源。为了兼容第三方服务，`perpetua` 也提供了作为客户端主动提供服务资源的实现。  
+
+> 注意: 由于 `perpetua` 的设计理念，http 代理调用将不会被支持。若您在使用 Http Post 这类依赖回调触发事件的通信协议时有主动调用 API 的需求，请考虑使用其他连接方式（如 Http Post + 正向 WebSocket）实现
+
 - OneBot
-  - [x] 正向 WebSocket
+  - [x] 正向 WebSocket（非标准形式）
   - [x] 反向 WebSocket
+  - [x] Http Post
 - Satori
   - [ ] WebAPI
 
