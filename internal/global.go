@@ -33,5 +33,8 @@ var Config *model.Config
 // AppSettings Lagrange.OneBot appsettings.json
 var AppSettings *model.AppSettings
 
+// Lifecycle NTQQ lifecycle metadata
+var Lifecycle MsgData
+
 // Heartbeat NTQQ heartbeat status
 var Heartbeat MsgData

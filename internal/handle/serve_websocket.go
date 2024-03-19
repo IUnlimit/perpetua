@@ -96,9 +96,11 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 			continue
 		}
 
-		// heartbeat
 		if msgData["meta_event_type"] == "heartbeat" {
 			global.Heartbeat = msgData
+			continue
+		} else if msgData["meta_event_type"] == "lifecycle" {
+			global.Lifecycle = msgData
 			continue
 		}
 
