@@ -2,32 +2,62 @@ package handle
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/utils"
-	"github.com/IUnlimit/perpetua/pkg/deepcopy"
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 )
 
+// ReadAndWriteClient read loop and write loop
+type ReadAndWriteClient struct {
+	addr    string
+	conn    *websocket.Conn
+	handler *Handler
+}
+
+func NewReadAndWriteClient(conn *websocket.Conn, handler *Handler) *ReadAndWriteClient {
+	addr := conn.LocalAddr().String()
+	return &ReadAndWriteClient{
+		addr:    addr,
+		conn:    conn,
+		handler: handler,
+	}
+}
+
+func (raw *ReadAndWriteClient) writeFunc(data global.MsgData) error {
+	return raw.conn.WriteJSON(data)
+}
+
+func (raw *ReadAndWriteClient) readFunc() ([]byte, error) {
+	_, bytes, err := raw.conn.ReadMessage()
+	return bytes, err
+}
+
+func (raw *ReadAndWriteClient) getHandler() *Handler {
+	return raw.handler
+}
+
+func (raw *ReadAndWriteClient) getUrl() string {
+	return raw.addr
+}
+
 var upgrader websocket.Upgrader
 
-// TryReverseWSInstance try to establish reverse ws client connection
-func TryReverseWSInstance(wsUrl string, accessToken string) error {
+// TryReverseWebsocket try to establish reverse ws client connection
+func TryReverseWebsocket(wsUrl string, accessToken string) error {
 	impl, err := utils.GetForwardImpl()
 	if err != nil {
 		return err
 	}
 	<-utils.WaitNTQQStartup(impl.Host, impl.Port, nil)
 	<-utils.WaitCondition(time.Duration(2000), func() error {
-		if global.Heartbeat == nil {
+		if global.Lifecycle == nil {
 			return errors.New("not init yet")
 		}
 		return nil
@@ -37,9 +67,9 @@ func TryReverseWSInstance(wsUrl string, accessToken string) error {
 	if len(accessToken) != 0 {
 		request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	}
-	request.Header.Set("X-Self-ID", strconv.Itoa(int(global.Heartbeat["self_id"].(float64))))
+	request.Header.Set("X-Self-ID", strconv.Itoa(int(global.Lifecycle["self_id"].(float64))))
 	request.Header.Set("X-Client-Role", "Universal")
-	log.Infof("[Client] Start connecting to reverse-websocket: %s with headers: %s", wsUrl, request.Header)
+	log.Infof("[Client] Start try to report events to wsUrl: %s with headers: %s", wsUrl, request.Header)
 
 	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, request.Header)
 	if err != nil {
@@ -49,7 +79,8 @@ func TryReverseWSInstance(wsUrl string, accessToken string) error {
 	defer conn.Close()
 
 	handler := NewHandler(context.Background())
-	configureClientHandler(handler, conn)
+	client := NewReadAndWriteClient(conn, handler)
+	ConfigureRAWClientHandler(client)
 	return nil
 }
 
@@ -80,7 +111,8 @@ func CreateWSInstance(port int) {
 
 		start = true
 		handler = NewHandler(ctx)
-		configureClientHandler(handler, conn)
+		client := NewReadAndWriteClient(conn, handler)
+		ConfigureRAWClientHandler(client)
 		_ = server.Shutdown(ctx)
 	}
 
@@ -111,169 +143,4 @@ func CreateWSInstance(port int) {
 			ClientOnlineStatusChangeEvent(handler, false)
 		}
 	})
-}
-
-// configure and link handler to connection
-func configureClientHandler(handler *Handler, conn *websocket.Conn) {
-	addr := conn.LocalAddr().String()
-	addressParts := strings.Split(addr, ":")
-	portStr := addressParts[len(addressParts)-1]
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		log.Errorf("[Client] Failed to obtain the link port, address: %s", addr)
-		return
-	}
-
-	handleSet.Add(handler)
-	handler.AddWait()
-	log.Infof("[Client] WebSocket connection established on %s", addr)
-	ClientOnlineStatusChangeEvent(handler, true)
-
-	// heartbeat
-	gopool.Go(func() {
-		handler.AddWait()
-		err := doHeartbeat(handler, conn)
-		if err != nil {
-			log.Debugf("[Client] Error occurred when heartbeat on %s: %v", addr, err)
-		}
-	})
-
-	// write to client
-	// perp -> client
-	gopool.Go(func() {
-		handler.AddWait()
-		write2ClientLoop(handler, conn, port)
-	})
-
-	// read from client
-	// perp <- client
-	gopool.Go(func() {
-		handler.AddWait()
-		readFromClientLoop(handler, conn, port)
-	})
-
-	handler.WaitDone()
-	log.Infof("[Client] WebSocket connection closed on port: %d", port)
-}
-
-func write2ClientLoop(handler *Handler, conn *websocket.Conn, port int) {
-	for {
-		if handler.ShouldExit() {
-			log.Debugf("[->Client] Websocket write goroutine on port %d has exited", port)
-			return
-		}
-
-		handler.GetMessage(func(data global.MsgData) {
-			if handler.ShouldExit() {
-				return
-			}
-			log.Debugf("[->Client] Try to send message to client(id-%s, name-%s)", handler.id, handler.name)
-			handler.Lock.Lock()
-			err := conn.WriteJSON(data)
-			handler.Lock.Unlock()
-			if err != nil {
-				log.Warnf("[->Client] Failed to write message to WebSocket(port: %d): %v", port, err)
-				handler.WaitExitAll()
-			}
-		})
-	}
-}
-
-func readFromClientLoop(handler *Handler, conn *websocket.Conn, port int) {
-	for {
-		if handler.ShouldExit() {
-			log.Debugf("[<-Client] Websocket read goroutine on port %d has exited", port)
-			return
-		}
-
-		mType, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Warnf("[<-Client] Failed to read message from WebSocket(port: %d): %v", port, err)
-			handler.WaitExitAll()
-			return
-		}
-		log.Debugf("[<-Client] Received message(type: %d) on port-%d: %s", mType, port, string(message))
-
-		var msgData global.MsgData
-		err = json.Unmarshal(message, &msgData)
-		if err != nil {
-			log.Errorf("[<-Client] Failed to unmarshal client message: %s", string(message))
-			continue
-		}
-
-		if msgData["echo"] == nil {
-			msgData["echo"] = ""
-		}
-
-		// intercept hooked requests
-		exist, err := interceptHookedRequests(msgData, handler)
-		if exist {
-			// touch hook method error, no need to break
-			if err != nil {
-				log.Errorf("[<-Client] Failed to intercept hooked requests: %v", msgData)
-			}
-			continue
-		}
-
-		// sign with echo field
-		id := handler.GetId()
-		echo := msgData["echo"].(string)
-		echo = fmt.Sprintf("%s#%s#%s", global.EchoPrefix, id, echo)
-		msgData["echo"] = echo
-		log.Debugf("[<-Client] Update client(port-%d) message echo: %s", port, echo)
-		echoMap.JustPut(id, msgData)
-		echoMap.Receive <- true
-	}
-}
-
-// @return continue loop
-func interceptHookedRequests(msgData global.MsgData, handler *Handler) (bool, error) {
-	resp, exist, err := TryTouchEnhanceHook(msgData, handler)
-	if err != nil {
-		return true, err
-	}
-	// todo jump able
-	if !exist {
-		return false, nil
-	}
-
-	uuid, err := globalCache.Append(resp)
-	if err != nil {
-		handler.WaitExitAll()
-		return true, err
-	}
-
-	handler.AddMessage(uuid)
-	return true, nil
-}
-
-// do heartbeat to client
-func doHeartbeat(handler *Handler, conn *websocket.Conn) error {
-	impl, err := utils.GetForwardImpl()
-	if err != nil {
-		return err
-	}
-	ticker := time.NewTicker(time.Millisecond * time.Duration(impl.HeartBeatInterval))
-	defer ticker.Stop()
-
-	for {
-		if handler.ShouldExit() {
-			return nil
-		}
-
-		// update heartbeat time
-		heartbeat := deepcopy.Copy(global.Heartbeat).(global.MsgData)
-		heartbeat["time"] = time.Now().UnixMilli()
-		handler.Lock.Lock()
-		err := conn.WriteJSON(heartbeat)
-		handler.Lock.Unlock()
-		if err != nil {
-			return err
-		}
-
-		select {
-		case <-ticker.C:
-			log.Debugf("Heartbeat to client: %s", conn.RemoteAddr().String())
-		}
-	}
 }
