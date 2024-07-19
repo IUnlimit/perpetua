@@ -5,31 +5,43 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+
 	global "github.com/IUnlimit/perpetua/internal"
+	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"strings"
 )
 
 func CreateNTQQWebSocket() error {
 	var handle = NewHandler(context.Background())
 	handle.AddWait()
-	impl, err := utils.GetForwardImpl()
-	if err != nil {
-		return err
+
+	var wsUrl string
+	var accessToken string
+	if global.ImplType == model.EXTERNAL {
+		config := global.Config.NTQQImpl
+		wsUrl = config.ExternalWebSocket
+		accessToken = config.ExternalAccessToken
+	} else { // EMBED
+		impl, err := utils.GetForwardImpl()
+		if err != nil {
+			return err
+		}
+		wsUrl = fmt.Sprintf("ws://%s:%d/%s", impl.Host, impl.Port, impl.Suffix)
+		accessToken = impl.AccessToken
+
+		log.Info("[NTQQ] Start connecting to NTQQ websocket: ", wsUrl)
+		<-utils.WaitNTQQStartup(impl.Host, impl.Port, func(err2 error) {
+			log.Debugf("Wait NTQQ startup: %v", err2)
+		})
 	}
 
 	request, _ := http.NewRequest("GET", "", nil)
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", impl.AccessToken))
-	wsUrl := fmt.Sprintf("ws://%s:%d/%s", impl.Host, impl.Port, impl.Suffix)
-
-	log.Info("[NTQQ] Start connecting to NTQQ websocket: ", wsUrl)
-	<-utils.WaitNTQQStartup(impl.Host, impl.Port, func(err2 error) {
-		log.Debugf("Wait NTQQ startup: %v", err2)
-	})
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, request.Header)
 	if err != nil {
 		return err

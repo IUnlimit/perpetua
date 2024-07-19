@@ -1,11 +1,12 @@
 package perp
 
 import (
+	"time"
+
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/handle"
 	"github.com/bytedance/gopkg/util/gopool"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func EnableAgent() {

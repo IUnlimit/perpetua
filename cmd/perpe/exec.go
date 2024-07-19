@@ -2,13 +2,15 @@ package perp
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/IUnlimit/perpetua/configs"
-	"github.com/IUnlimit/perpetua/internal"
+	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/conf"
 	"github.com/IUnlimit/perpetua/internal/hook/qqimpl"
+	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 // Configure NTQQ settings using config.yml
@@ -20,9 +22,28 @@ func Configure() {
 
 	config := global.Config
 	lgrFolder := global.ParentPath + "/" + global.LgrFolder
+	global.ImplType = model.EMBED
+
+	// check impl type
+	lgrWS := config.NTQQImpl.ExternalWebSocket
+	if lgrWS != "" {
+		<-utils.WaitExternalNTQQStartup(lgrWS, 5, func(alive bool) {
+			if alive {
+				log.Info("External NTQQ connection successful: ", lgrWS)
+				global.ImplType = model.EXTERNAL
+			}
+		}, func(err2 error) {
+			log.Debugf("Wait External-NTQQ startup: %v", err2)
+		})
+
+		if global.ImplType == model.EXTERNAL {
+			return
+		}
+		log.Warn("External NTQQ connect failed, try to start EMBED")
+	}
 
 	log.Info("Searching Lagrange.OneBot ...")
-	err := qqimpl.InitLagrange(lgrFolder, config.NTQQImpl.Update)
+	err := qqimpl.InitLagrange(lgrFolder, config.NTQQImpl.Update.Enable)
 	if err != nil {
 		log.Fatalf("Lagrange.OneBot init error %v", err)
 	}
@@ -33,7 +54,7 @@ func Configure() {
 		log.Fatalf("Failed to load lgr config: %v", err)
 	}
 	if !exists {
-		log.Info("Default `appsettings.json` has been generated, please configure and restart perpetua (See https://github.com/LagrangeDev/Lagrange.Core?tab=readme-ov-file#appsettingsjson-example)")
+		log.Info("Default `appsettings.json` has been generated, please configure and restart perpetua (See https://github.com/LagrangeDev/Lagrange.Core?tab=readme-ov-file#signserver)")
 		os.Exit(0)
 	}
 }

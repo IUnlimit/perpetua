@@ -20,12 +20,20 @@ log:
   # 是否开启控制台颜色
   colorful: true
 
-# 本配置项自动更新，无需手动
 ntqq-impl:
-  update: false
-  id: 0
-  platform: ""
-  updated-at: "0001-01-01T00:00:00Z"
+  # 外置 onebot-11 实现的正向 ws 地址
+  # 手动指定 ntqq 实现的正向 ws 地址（docker 部署或连接到外置NTQQ实现时使用）
+  # 若检测不到，则自动开始加载内置 NTQQ 逻辑
+  external-web-socket: "ws://127.0.0.1:5700/onebot/v11/ws"
+  # 外置 onebot-11 实现的 AccessToken
+  # 仅在配置了 external-web-socket 时生效
+  external-access-token: ""
+  # 以下配置项除 enable 外自动更新，无需手动变动
+  update:
+    enable: false
+    id: 0
+    platform: ""
+    updated-at: "0001-01-01T00:00:00Z"
 
 # http 相关配置
 http:
@@ -46,6 +54,8 @@ web-socket:
     end: 8110
 
 # 反向 websocket 相关配置
+# 注：是由 perpetua 主动向上报地址发起反向 ws 连接
+# 使用场景举例：perpetua 在启动后主动连接到 nonebot
 reverse-web-socket:
     # 上报地址
   - url: ''
@@ -53,6 +63,7 @@ reverse-web-socket:
     access-token: ''
 
 # http post 相关配置
+# 注：是由 perpetua 主动向上报地址上报事件
 http-post:
     # 上报地址
   - url: ''

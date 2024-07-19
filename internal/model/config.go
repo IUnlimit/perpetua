@@ -20,10 +20,9 @@ type Log struct {
 }
 
 type NTQQImpl struct {
-	Update    bool      `yaml:"update,omitempty"`
-	ID        int64     `yaml:"id,omitempty"`
-	Platform  string    `yaml:"platform,omitempty"`
-	UpdatedAt time.Time `yaml:"updated-at"`
+	ExternalWebSocket   string  `yaml:"external-web-socket,omitempty"`
+	ExternalAccessToken string  `yaml:"external-access-token,omitempty"`
+	Update              *Update `yaml:"update"`
 }
 
 type Http struct {
@@ -43,6 +42,13 @@ type ReverseWebSocket struct {
 type HttpPost struct {
 	Url    string `yaml:"url,omitempty"`
 	Secret string `yaml:"secret,omitempty"`
+}
+
+type Update struct {
+	Enable    bool      `yaml:"enable,omitempty"`
+	ID        int64     `yaml:"id,omitempty"`
+	Platform  string    `yaml:"platform,omitempty"`
+	UpdatedAt time.Time `yaml:"updated-at"`
 }
 
 type RangePort struct {

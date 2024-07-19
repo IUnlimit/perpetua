@@ -1,9 +1,10 @@
 package global
 
 import (
-	"github.com/IUnlimit/perpetua/internal/model"
 	"os"
 	"regexp"
+
+	"github.com/IUnlimit/perpetua/internal/model"
 )
 
 // MsgData websocket message data type
@@ -17,6 +18,9 @@ const LgrFolder = "Lagrange.OneBot/"
 
 // EchoPrefix is prefix for generating echos
 const EchoPrefix = "perp"
+
+// The NTQQ impl connection type
+var ImplType model.ImplType
 
 // Restart marks whether the end status of the process is restarted
 var Restart bool

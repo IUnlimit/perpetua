@@ -1,5 +1,12 @@
 package model
 
+type ImplType string
+
+const (
+	EMBED    = ImplType("EMBED")
+	EXTERNAL = ImplType("EXTERNAL")
+)
+
 type Client struct {
 	// 客户端ID
 	AppId string `json:"app_id"`

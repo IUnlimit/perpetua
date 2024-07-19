@@ -3,10 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/bytedance/gopkg/util/gopool"
-	"time"
 )
 
 func BuildWSGoodResponse(status string, echo string, entry ...any) global.MsgData {
@@ -54,7 +55,25 @@ func WaitNTQQStartup(host string, port int, waitCallback func(error)) <-chan str
 	}, waitCallback)
 }
 
-func WaitCondition(gap time.Duration, condition func() error, waitCallback func(error)) <-chan struct{} {
+// WaitExternalNTQQStartup wait for external NTQQ websocket connection to be enabled
+func WaitExternalNTQQStartup(ws string, timeoutSeconds int, connectCallback func(bool), waitCallback func(error)) <-chan struct{} {
+	seconds := -1
+	return WaitCondition(time.Duration(1000), func() error {
+		seconds++
+		if seconds >= timeoutSeconds {
+			connectCallback(false)
+			return nil
+		}
+		err := CheckWebsocket(ws, time.Second*1)
+		if err != nil {
+			return err
+		}
+		connectCallback(true)
+		return nil
+	}, waitCallback)
+}
+
+func WaitCondition(gapedMillisecond time.Duration, condition func() error, waitCallback func(error)) <-chan struct{} {
 	done := make(chan struct{})
 
 	gopool.Go(func() {
@@ -66,7 +85,7 @@ func WaitCondition(gap time.Duration, condition func() error, waitCallback func(
 			if waitCallback != nil {
 				waitCallback(err)
 			}
-			time.Sleep(time.Millisecond * gap)
+			time.Sleep(time.Millisecond * gapedMillisecond)
 		}
 		close(done)
 	})

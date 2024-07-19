@@ -3,17 +3,19 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/IUnlimit/perpetua/internal/erren"
-	"github.com/IUnlimit/perpetua/internal/model"
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/IUnlimit/perpetua/internal/erren"
+	"github.com/IUnlimit/perpetua/internal/model"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/cheggaaa/pb/v3"
 )
@@ -101,6 +103,19 @@ func CheckPort(host string, port int, timeout time.Duration) error {
 	return nil
 }
 
+func CheckWebsocket(ws string, timeout time.Duration) error {
+	dialer := websocket.Dialer{
+		HandshakeTimeout: timeout,
+	}
+
+	conn, _, err := dialer.Dial(ws, http.Header{})
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	return nil
+}
+
 // BadResponse Return error status code and error message
 func BadResponse(c *gin.Context, err error) {
 	Err := erren.ConvertErr(err)
@@ -142,7 +157,7 @@ func download(resp *http.Response, filePath string, fileSize int64) error {
 	if fileSize == -1 {
 		fileSize = resp.ContentLength
 	}
-	log.Debug("Download content length: %d", fileSize)
+	log.Debugf("Download content length: %d", fileSize)
 
 	file, err := os.Create(filePath)
 	if err != nil {

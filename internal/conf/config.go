@@ -4,14 +4,15 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"os"
+	"regexp"
+
 	"github.com/IUnlimit/perpetua/configs"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
-	"os"
-	"regexp"
 )
 
 // LoadConfig creat and load config, return exists(file)
@@ -66,8 +67,8 @@ func UpdateConfig(artifact *model.Artifact) error {
 	}
 
 	config := global.Config
-	config.NTQQImpl = &model.NTQQImpl{
-		Update:    config.NTQQImpl.Update,
+	config.NTQQImpl.Update = &model.Update{
+		Enable:    config.NTQQImpl.Update.Enable,
 		ID:        artifact.ID,
 		Platform:  platform,
 		UpdatedAt: artifact.UpdatedAt,

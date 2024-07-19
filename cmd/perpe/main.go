@@ -1,11 +1,17 @@
 package perp
 
-import "github.com/bytedance/gopkg/util/gopool"
+import (
+	global "github.com/IUnlimit/perpetua/internal"
+	"github.com/IUnlimit/perpetua/internal/model"
+	"github.com/bytedance/gopkg/util/gopool"
+)
 
 func Bootstrap() {
 	Configure()
-	gopool.Go(func() {
-		Start()
-	})
+	if global.ImplType == model.EMBED {
+		gopool.Go(func() {
+			Start()
+		})
+	}
 	EnableAgent()
 }
