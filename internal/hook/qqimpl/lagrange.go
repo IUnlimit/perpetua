@@ -2,18 +2,19 @@ package qqimpl
 
 import (
 	"fmt"
+	"os"
+
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/conf"
 	"github.com/IUnlimit/perpetua/internal/hook"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 func InitLagrange(lgrFolder string, update bool) error {
 	owner := "LagrangeDev"
 	repo := "Lagrange.Core"
-	exists := utils.FileExists(lgrFolder + "Lagrange.OneBot.pdb")
+	exists := utils.FileExists(lgrFolder)
 
 	if !exists || update {
 		zipPath := global.ParentPath + "/Lagrange.OneBot.zip"
@@ -56,7 +57,7 @@ func updateNTQQImpl(owner string, repo string, zipPath string, lgrFolder string,
 	artifact := artifacts[selectIndex]
 	// check lgr version
 	if exists {
-		if artifact.UpdatedAt.Before(global.Config.NTQQImpl.UpdatedAt) {
+		if artifact.UpdatedAt.Before(global.Config.NTQQImpl.Update.UpdatedAt) {
 			log.Info("Lagrange.OneBot is the latest version")
 			return nil
 		}
@@ -77,7 +78,7 @@ func updateNTQQImpl(owner string, repo string, zipPath string, lgrFolder string,
 		return err
 	}
 
-	exists = utils.FileExists(lgrFolder + "Lagrange.OneBot.pdb")
+	exists = utils.FileExists(lgrFolder)
 	callback(exists)
 	err = conf.UpdateConfig(artifact)
 	if err != nil {
