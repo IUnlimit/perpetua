@@ -2,8 +2,6 @@ package perp
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/IUnlimit/perpetua/configs"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/conf"
@@ -11,6 +9,7 @@ import (
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 // Configure NTQQ settings using config.yml
@@ -37,6 +36,25 @@ func Configure() {
 		})
 
 		if global.ImplType == model.EXTERNAL {
+			config := global.Config.NTQQImpl
+			host, port, suffix, err := utils.ParseWebSocketURL(config.ExternalWebSocket)
+			if err != nil {
+				log.Fatalf("Parse external websocket url: %v", err)
+				return
+			}
+			global.AppSettings = &model.AppSettings{
+				Implementations: []*model.Implementation{
+					{
+						Type:              "ForwardWebSocket",
+						Host:              host,
+						Port:              port,
+						Suffix:            suffix,
+						ReconnectInterval: 5000,
+						HeartBeatInterval: 5000,
+						AccessToken:       config.ExternalAccessToken,
+					},
+				},
+			}
 			return
 		}
 		log.Warn("External NTQQ connect failed, try to start EMBED")

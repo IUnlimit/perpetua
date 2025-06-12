@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/IUnlimit/perpetua/internal/erren"
@@ -19,6 +21,37 @@ import (
 
 	"github.com/cheggaaa/pb/v3"
 )
+
+func ParseWebSocketURL(wsURL string) (host string, port int, suffix string, err error) {
+	u, err := url.Parse(wsURL)
+	if err != nil {
+		return "", 0, "", err
+	}
+
+	hostname, portStr, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		// 没有显式端口，则判断默认端口
+		hostname = u.Host
+		if u.Scheme == "ws" {
+			portStr = "80"
+		} else if u.Scheme == "wss" {
+			portStr = "443"
+		} else {
+			portStr = ""
+		}
+	}
+
+	suffix = u.Path
+	if !strings.HasPrefix(suffix, "/") {
+		suffix = "/" + suffix
+	}
+	port, err = strconv.Atoi(portStr)
+	if err != nil {
+		return "", 0, "", err
+	}
+
+	return hostname, port, suffix, nil
+}
 
 func BuildURLParams(baseURL string, params map[string]string) (string, error) {
 	u, err := url.Parse(baseURL)
