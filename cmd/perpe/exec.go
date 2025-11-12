@@ -2,6 +2,8 @@ package perp
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/IUnlimit/perpetua/configs"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/conf"
@@ -9,7 +11,6 @@ import (
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 // Configure NTQQ settings using config.yml
@@ -26,7 +27,7 @@ func Configure() {
 	// check impl type
 	lgrWS := config.NTQQImpl.ExternalWebSocket
 	if lgrWS != "" {
-		<-utils.WaitExternalNTQQStartup(lgrWS, 5, func(alive bool) {
+		<-utils.WaitExternalNTQQStartup(lgrWS, func(alive bool) {
 			if alive {
 				log.Info("External NTQQ connection successful: ", lgrWS)
 				global.ImplType = model.EXTERNAL
