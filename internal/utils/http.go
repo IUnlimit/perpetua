@@ -32,11 +32,12 @@ func ParseWebSocketURL(wsURL string) (host string, port int, suffix string, err 
 	if err != nil {
 		// 没有显式端口，则判断默认端口
 		hostname = u.Host
-		if u.Scheme == "ws" {
+		switch u.Scheme {
+		case "ws":
 			portStr = "80"
-		} else if u.Scheme == "wss" {
+		case "wss":
 			portStr = "443"
-		} else {
+		default:
 			portStr = ""
 		}
 	}
@@ -127,7 +128,7 @@ func DownloadFileWithHeaders(url string, filePath string, headers map[string]str
 }
 
 func CheckPort(host string, port int, timeout time.Duration) error {
-	address := fmt.Sprintf("%s:%d", host, port)
+	address := net.JoinHostPort(host, fmt.Sprintf("%d", port))
 	conn, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
 		return err

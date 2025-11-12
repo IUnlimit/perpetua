@@ -1,12 +1,7 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
-	global "github.com/IUnlimit/perpetua/internal"
-	"github.com/IUnlimit/perpetua/internal/logger"
-	"github.com/bytedance/gopkg/util/gopool"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"os"
@@ -14,6 +9,11 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+
+	global "github.com/IUnlimit/perpetua/internal"
+	"github.com/IUnlimit/perpetua/internal/logger"
+	"github.com/bytedance/gopkg/util/gopool"
+	log "github.com/sirupsen/logrus"
 )
 
 func ContainsArgs(flag string) bool {
@@ -97,7 +97,7 @@ func RandomAvailablePort(rangePort bool, start int, end int) (int, error) {
 
 	portRange := end - start
 	if start < 512 || end > 65535 || portRange < 0 {
-		return 0, errors.New(fmt.Sprintf("invalid port range [%d-%d]", start, end))
+		return 0, fmt.Errorf("invalid port range [%d-%d]", start, end)
 	}
 	if portRange == 0 {
 		return start, nil
@@ -109,7 +109,7 @@ func RandomAvailablePort(rangePort bool, start int, end int) (int, error) {
 			return port, nil
 		}
 	}
-	return 0, errors.New(fmt.Sprintf("unavailable port in range [%d-%d]", start, end))
+	return 0, fmt.Errorf("unavailable port in range [%d-%d]", start, end)
 }
 
 func tryListen(port int) (int, error) {

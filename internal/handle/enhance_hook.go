@@ -1,15 +1,15 @@
 package handle
 
 import (
-	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/utils"
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	"sync"
-	"time"
 )
 
 // enhance onebot API impl
@@ -29,7 +29,7 @@ func TryTouchEnhanceHook(msgData global.MsgData, handler *Handler) (global.MsgDa
 	params := msgData["params"]
 	if _, ok := params.(map[string]interface{}); !ok {
 		if params != nil {
-			return nil, false, errors.New(fmt.Sprintf("unknown params field type: %s", params))
+			return nil, false, fmt.Errorf("unknown params field type: %s", params)
 		}
 		msgData["params"] = emptyParams
 	}
@@ -98,7 +98,7 @@ func sendBroadcastData(msgData global.MsgData, trigger *Handler) (global.MsgData
 	} else if _, ok := clients.([]interface{}); !ok {
 		return utils.BuildWSBadResponse(fmt.Sprintf("unknown clients list: %s", clients), msgData["echo"].(string)), nil
 	} else if len(clients.([]interface{})) == 0 {
-		return utils.BuildWSBadResponse(fmt.Sprintf("empty clients list"), msgData["echo"].(string)), nil
+		return utils.BuildWSBadResponse("empty clients list", msgData["echo"].(string)), nil
 	}
 
 	targets := make([]interface{}, 0)
@@ -132,7 +132,7 @@ func sendBroadcastDataCallback(msgData global.MsgData, trigger *Handler) (global
 	}
 	id := params["uuid"]
 	if _, ok := id.(string); !ok || len(id.(string)) == 0 {
-		return utils.BuildWSBadResponse(fmt.Sprintf("broadcast callback api must specify uuid"), msgData["echo"].(string)), nil
+		return utils.BuildWSBadResponse("broadcast callback api must specify uuid", msgData["echo"].(string)), nil
 	}
 
 	var target interface{}
