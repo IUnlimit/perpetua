@@ -22,7 +22,8 @@
 | `post_type`   | string         | `notice`        | 上报类型          |
 | `notice_type` | string         | `client_status` | 通知类型          |
 | `client`      | Client*        | -               | 客户端信息         |
-| `online`      | bool           | -               | 当前是否在线        |
+| `online`      | bool           | -               | 当前客户端是否在线        |
+| `self_client` | bool           | -               | 当前客户端是否是自身        |
 
 - Client 可在 [拓展数据类型](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-model?id=client) 查看
 
