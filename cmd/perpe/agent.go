@@ -5,11 +5,22 @@ import (
 
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/handle"
+	"github.com/IUnlimit/perpetua/internal/web"
 	"github.com/bytedance/gopkg/util/gopool"
 	log "github.com/sirupsen/logrus"
 )
 
 func EnableAgent() {
+	// Initialize Redis and start web dashboard
+	if err := web.InitRedis(); err != nil {
+		log.Warnf("[Web] Redis initialization failed: %v, packet recording disabled", err)
+	} else {
+		web.StartCleanupTask()
+	}
+	// Wire up connections provider to avoid circular import
+	web.ConnectionsProvider = handle.GetAllConnections
+	web.StartWebServer()
+
 	gopool.Go(func() {
 		config := global.Config.Http
 		handle.EnableHttpService(config.Port)

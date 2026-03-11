@@ -10,6 +10,20 @@ type Config struct {
 	ReverseWebSocket []*ReverseWebSocket `yaml:"reverse-web-socket"`
 	HttpPost         []*HttpPost         `yaml:"http-post"`
 	MsgExpireTime    time.Duration       `yaml:"msg-expire-time,omitempty"`
+	Redis            *Redis              `yaml:"redis"`
+	Web              *Web                `yaml:"web"`
+}
+
+type Redis struct {
+	Addr     string `yaml:"addr,omitempty"`
+	Password string `yaml:"password,omitempty"`
+	DB       int    `yaml:"db,omitempty"`
+}
+
+type Web struct {
+	Port            int           `yaml:"port,omitempty"`
+	PacketExpire    time.Duration `yaml:"packet-expire,omitempty"`
+	CleanupInterval time.Duration `yaml:"cleanup-interval,omitempty"`
 }
 
 type Log struct {

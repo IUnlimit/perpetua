@@ -45,6 +45,19 @@ func GetOnlineClients(ctx *gin.Context) {
 		clients)
 }
 
+// GetAllConnections returns all active handler connections info
+func GetAllConnections() []map[string]interface{} {
+	connections := make([]map[string]interface{}, 0)
+	for _, v := range handleSet.Iterator() {
+		handler := v.(*Handler)
+		connections = append(connections, map[string]interface{}{
+			"app_id":      handler.GetId(),
+			"client_name": handler.GetName(),
+		})
+	}
+	return connections
+}
+
 // EnableHttpService enable http server
 func EnableHttpService(port int) {
 	gin.SetMode(gin.ReleaseMode)

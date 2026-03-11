@@ -72,3 +72,21 @@ http-post:
 
 # 接收消息的最大缓存时间
 msg-expire-time: 30m
+
+# Redis 配置（用于数据包记录持久化）
+redis:
+  # Redis 地址
+  addr: "127.0.0.1:6379"
+  # Redis 密码
+  password: ""
+  # Redis 数据库
+  db: 0
+
+# Web 管理面板配置
+web:
+  # 管理面板端口
+  port: 9090
+  # 数据包记录过期时间
+  packet-expire: 24h
+  # 过期数据清理间隔
+  cleanup-interval: 1h

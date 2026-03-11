@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>perpetua · 管理面板</title>
+  <link rel="stylesheet" href="/assets/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="nav-bar">
+    <div class="nav-bar-inner">
+      <div class="nav-title">⚡ <span>perpetua</span></div>
+      <div class="nav-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">连接中…</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-container">
+
+    <!-- Page Header -->
+    <header class="page-header fade-in">
+      <h1>管理面板</h1>
+      <p>实时监控连接状态与数据包交互</p>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card fade-in stagger-1">
+        <div class="stat-icon blue">🔗</div>
+        <div class="stat-value" id="statConnections">-</div>
+        <div class="stat-label">活跃连接</div>
+      </div>
+      <div class="stat-card fade-in stagger-2">
+        <div class="stat-icon green">📦</div>
+        <div class="stat-value" id="statPackets">-</div>
+        <div class="stat-label">数据包记录</div>
+      </div>
+      <div class="stat-card fade-in stagger-3">
+        <div class="stat-icon purple">💓</div>
+        <div class="stat-value" id="statHeartbeat">-</div>
+        <div class="stat-label">心跳状态</div>
+      </div>
+    </div>
+
+    <!-- Connections Section -->
+    <section class="section fade-in stagger-3">
+      <div class="section-header">
+        <h2 class="section-title">连接列表</h2>
+        <button class="section-action" onclick="refreshConnections()">刷新</button>
+      </div>
+      <div class="card-group" id="connectionList">
+        <!-- Skeleton loading -->
+        <div class="skeleton-row">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton skeleton-line" style="width:45%"></div>
+            <div class="skeleton skeleton-line"></div>
+          </div>
+        </div>
+        <div class="skeleton-row">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton skeleton-line" style="width:55%"></div>
+            <div class="skeleton skeleton-line"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Packets Section -->
+    <section class="section fade-in stagger-4">
+      <div class="section-header">
+        <h2 class="section-title">数据包</h2>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="refresh-indicator" id="refreshIndicator"></span>
+          <button class="section-action" id="deleteBtn" onclick="showDeleteConfirm()">清理记录</button>
+        </div>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="packet-toolbar">
+        <button class="filter-chip active" data-filter="all" onclick="setFilter('all', this)">全部</button>
+        <button class="filter-chip" data-filter="ntqq->client" onclick="setFilter('ntqq->client', this)">↓ 下行</button>
+        <button class="filter-chip" data-filter="client->ntqq" onclick="setFilter('client->ntqq', this)">↑ 上行</button>
+      </div>
+
+      <div class="card-group" id="packetList">
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-text">暂无数据包</div>
+          <div class="empty-state-sub">等待连接建立后将自动记录</div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination" style="display:none">
+        <button class="page-btn" id="prevBtn" onclick="prevPage()" disabled>上一页</button>
+        <span class="page-info" id="pageInfo">1 / 1</span>
+        <button class="page-btn" id="nextBtn" onclick="nextPage()">下一页</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Packet Detail Modal -->
+  <div class="modal-overlay" id="packetModal" onclick="closeModalOutside(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <span class="modal-title">数据包详情</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal-overlay" id="deleteModal" onclick="closeDeleteOutside(event)">
+    <div class="modal-sheet" style="max-height:auto">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <span class="modal-title">清理数据包记录</span>
+        <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+      </div>
+      <div class="modal-content">
+        <p style="font-size:15px;color:var(--label-secondary);margin-bottom:8px">
+          将删除所有已记录的数据包。此操作不可撤销。
+        </p>
+        <div class="confirm-actions">
+          <button class="cancel-btn" onclick="closeDeleteModal()">取消</button>
+          <button class="danger-btn" onclick="confirmDelete()">确认删除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>

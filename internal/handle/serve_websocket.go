@@ -11,6 +11,7 @@ import (
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/utils"
+	"github.com/IUnlimit/perpetua/internal/web"
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
@@ -160,6 +161,8 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 		// when closed, staying dispatch
 		for _, v := range receivers {
 			handler := v.(*Handler)
+			// Record packet: NTQQ -> client
+			web.RecordPacket("ntqq->client", handler.GetId(), handler.GetName(), msgData)
 			handler.AddMessage(uuid)
 		}
 	}

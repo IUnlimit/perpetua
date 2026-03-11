@@ -5,6 +5,7 @@ import (
 	"fmt"
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/utils"
+	"github.com/IUnlimit/perpetua/internal/web"
 	"github.com/IUnlimit/perpetua/pkg/deepcopy"
 	"github.com/bytedance/gopkg/util/gopool"
 	log "github.com/sirupsen/logrus"
@@ -235,6 +236,10 @@ func addEchoThenServe(prefix string, c Client, messageSupplier func() ([]byte, e
 	echo = fmt.Sprintf("%s#%s#%s", global.EchoPrefix, id, echo)
 	msgData["echo"] = echo
 	log.Debugf("%s Update client(url-%s) message echo: %s", prefix, c.getUrl(), echo)
+
+	// Record packet: client -> NTQQ
+	web.RecordPacket("client->ntqq", handler.GetId(), handler.GetName(), msgData)
+
 	echoMap.JustPut(id, msgData)
 	echoMap.Receive <- true
 }
