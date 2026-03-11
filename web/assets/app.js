@@ -52,7 +52,9 @@ async function refreshSystem() {
   document.getElementById('statPackets').textContent = formatNumber(d.packets_count ?? 0);
 
   if (d.heartbeat && d.heartbeat.time) {
-    const ago = timeSince(d.heartbeat.time);
+    // heartbeat.time is unix seconds, convert to ms
+    const tsMs = d.heartbeat.time < 1e12 ? d.heartbeat.time * 1000 : d.heartbeat.time;
+    const ago = timeSince(tsMs);
     document.getElementById('statHeartbeat').textContent = ago;
   } else {
     document.getElementById('statHeartbeat').textContent = '等待中';
