@@ -82,11 +82,17 @@
         </div>
       </div>
 
-      <!-- Filter chips -->
-      <div class="packet-toolbar">
-        <button class="filter-chip active" data-filter="all" onclick="setFilter('all', this)">全部</button>
-        <button class="filter-chip" data-filter="ntqq->client" onclick="setFilter('ntqq->client', this)">↓ 下行</button>
-        <button class="filter-chip" data-filter="client->ntqq" onclick="setFilter('client->ntqq', this)">↑ 上行</button>
+      <!-- Link tabs -->
+      <div class="packet-toolbar" id="linkTabs">
+        <button class="filter-chip active" onclick="setLink('all', this)">全部</button>
+        <button class="filter-chip" onclick="setLink('ntqq', this)">NTQQ 链路</button>
+        <button class="filter-chip" onclick="setLink('client', this)">客户端链路</button>
+      </div>
+      <!-- Direction filter -->
+      <div class="packet-toolbar" id="dirTabs">
+        <button class="filter-chip active" onclick="setDirection('all', this)">全部方向</button>
+        <button class="filter-chip" onclick="setDirection('inbound', this)">↓ 入站</button>
+        <button class="filter-chip" onclick="setDirection('outbound', this)">↑ 出站</button>
       </div>
 
       <div class="card-group" id="packetList">

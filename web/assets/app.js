@@ -7,7 +7,8 @@ const POLL_INTERVAL = 5000;
 const PAGE_SIZE = 30;
 
 // ── State ──
-let currentFilter = 'all';
+let currentLinkFilter = 'all';       // 'all' | 'ntqq' | 'client'
+let currentDirFilter = 'all';        // 'all' | 'inbound' | 'outbound'
 let currentHandlerFilter = '';
 let currentPage = 0;
 let totalPackets = 0;
@@ -52,7 +53,6 @@ async function refreshSystem() {
   document.getElementById('statPackets').textContent = formatNumber(d.packets_count ?? 0);
 
   if (d.heartbeat && d.heartbeat.time) {
-    // heartbeat.time is unix seconds, convert to ms
     const tsMs = d.heartbeat.time < 1e12 ? d.heartbeat.time * 1000 : d.heartbeat.time;
     const ago = timeSince(tsMs);
     document.getElementById('statHeartbeat').textContent = ago;
@@ -106,6 +106,23 @@ function toggleHandlerFilter(handlerId) {
   refreshPackets();
 }
 
+// ── Filter controls ──
+function setLink(link, el) {
+  currentLinkFilter = link;
+  document.querySelectorAll('#linkTabs .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentPage = 0;
+  refreshPackets();
+}
+
+function setDirection(dir, el) {
+  currentDirFilter = dir;
+  document.querySelectorAll('#dirTabs .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentPage = 0;
+  refreshPackets();
+}
+
 // ── Packets ──
 async function refreshPackets() {
   const offset = currentPage * PAGE_SIZE;
@@ -125,8 +142,14 @@ async function refreshPackets() {
   const container = document.getElementById('packetList');
 
   let filtered = packets || [];
-  if (currentFilter !== 'all') {
-    filtered = filtered.filter(p => p.direction === currentFilter);
+
+  // Apply link filter
+  if (currentLinkFilter !== 'all') {
+    filtered = filtered.filter(p => p.link === currentLinkFilter);
+  }
+  // Apply direction filter
+  if (currentDirFilter !== 'all') {
+    filtered = filtered.filter(p => p.direction === currentDirFilter);
   }
 
   if (filtered.length === 0) {
@@ -141,12 +164,13 @@ async function refreshPackets() {
   }
 
   container.innerHTML = filtered.map(p => {
-    const isInbound = p.direction === 'ntqq->client';
+    const isInbound = p.direction === 'inbound';
     const dirClass = isInbound ? 'inbound' : 'outbound';
     const dirIcon = isInbound ? '↓' : '↑';
+    const linkLabel = p.link === 'ntqq' ? 'NTQQ' : '客户端';
     const typeName = extractType(p.data);
     const preview = JSON.stringify(p.data).slice(0, 120);
-    const clientLabel = p.client_name || p.handler_id?.slice(0, 8) || '-';
+    const clientLabel = p.client_name || p.handler_id?.slice(0, 8) || '';
 
     return `
       <div class="packet-row" onclick='showPacketDetail(${escapeJsonAttr(JSON.stringify(p))})'>
@@ -154,7 +178,8 @@ async function refreshPackets() {
         <div class="packet-body">
           <div class="packet-meta">
             <span class="packet-type">${escapeHtml(typeName)}</span>
-            <span class="packet-client">${escapeHtml(clientLabel)}</span>
+            <span class="packet-link-badge ${p.link}">${linkLabel}</span>
+            ${clientLabel ? `<span class="packet-client">${escapeHtml(clientLabel)}</span>` : ''}
             <span class="packet-time">${formatTime(p.timestamp)}</span>
           </div>
           <div class="packet-preview">${escapeHtml(preview)}</div>
@@ -171,13 +196,6 @@ async function refreshPackets() {
   document.getElementById('pageInfo').textContent = `${currentPage + 1} / ${totalPages}`;
 }
 
-function setFilter(filter, el) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  refreshPackets();
-}
-
 function prevPage() {
   if (currentPage > 0) { currentPage--; refreshPackets(); }
 }
@@ -192,15 +210,21 @@ function showPacketDetail(packet) {
   const modal = document.getElementById('packetModal');
   const content = document.getElementById('modalContent');
 
-  const isInbound = packet.direction === 'ntqq->client';
-  const dirLabel = isInbound ? 'NTQQ → 客户端' : '客户端 → NTQQ';
+  const isInbound = packet.direction === 'inbound';
+  const linkLabel = packet.link === 'ntqq' ? 'NTQQ ↔ perpetua' : 'perpetua ↔ 客户端';
+  const dirLabel = isInbound ? '入站 (→ perpetua)' : '出站 (perpetua →)';
   const clientLabel = packet.client_name || '-';
 
   content.innerHTML = `
     <div class="detail-row">
+      <span class="detail-label">链路</span>
+      <span class="detail-value">${linkLabel}</span>
+    </div>
+    <div class="detail-row">
       <span class="detail-label">方向</span>
       <span class="detail-value">${dirLabel}</span>
     </div>
+    ${packet.link === 'client' ? `
     <div class="detail-row">
       <span class="detail-label">客户端</span>
       <span class="detail-value">${escapeHtml(clientLabel)}</span>
@@ -208,7 +232,7 @@ function showPacketDetail(packet) {
     <div class="detail-row">
       <span class="detail-label">Handler</span>
       <span class="detail-value" style="font-family:'SF Mono','Menlo','Consolas',monospace;font-size:12px">${packet.handler_id}</span>
-    </div>
+    </div>` : ''}
     <div class="detail-row">
       <span class="detail-label">时间</span>
       <span class="detail-value">${new Date(packet.timestamp).toLocaleString('zh-CN')}</span>

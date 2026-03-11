@@ -237,8 +237,8 @@ func addEchoThenServe(prefix string, c Client, messageSupplier func() ([]byte, e
 	msgData["echo"] = echo
 	log.Debugf("%s Update client(url-%s) message echo: %s", prefix, c.getUrl(), echo)
 
-	// Record packet: client -> NTQQ
-	web.RecordPacket("client->ntqq", handler.GetId(), handler.GetName(), msgData)
+	// Record packet: client -> perpetua (inbound on client link)
+	web.RecordClientPacket("inbound", handler.GetId(), handler.GetName(), msgData)
 
 	echoMap.JustPut(id, msgData)
 	echoMap.Receive <- true

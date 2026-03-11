@@ -8,9 +8,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// RecordPacket records a packet to Redis
-// direction: "ntqq->client" or "client->ntqq"
-func RecordPacket(direction string, handlerID string, clientName string, data global.MsgData) {
+// RecordNTQQPacket records a packet on the NTQQ <-> perpetua link
+// direction: "inbound" (ntqq -> perpetua) or "outbound" (perpetua -> ntqq)
+func RecordNTQQPacket(direction string, data global.MsgData) {
+	recordPacket("ntqq", direction, "", "", data)
+}
+
+// RecordClientPacket records a packet on the perpetua <-> client link
+// direction: "inbound" (client -> perpetua) or "outbound" (perpetua -> client)
+func RecordClientPacket(direction string, handlerID string, clientName string, data global.MsgData) {
+	recordPacket("client", direction, handlerID, clientName, data)
+}
+
+func recordPacket(link, direction, handlerID, clientName string, data global.MsgData) {
 	if rdb == nil {
 		return
 	}
@@ -18,6 +28,7 @@ func RecordPacket(direction string, handlerID string, clientName string, data gl
 	p := &Packet{
 		ID:         uuid.NewString(),
 		Timestamp:  time.Now().UnixMilli(),
+		Link:       link,
 		Direction:  direction,
 		HandlerID:  handlerID,
 		ClientName: clientName,

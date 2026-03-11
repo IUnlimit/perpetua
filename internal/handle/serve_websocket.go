@@ -78,6 +78,8 @@ func write2NTQQLoop(handle *Handler, conn *websocket.Conn) {
 			echoMap.JustGet(id, func(data global.MsgData) {
 				// TODO 断点续传,NTQQ重连尝试 echo赋值错误
 				log.Debugf("[NTQQ<-] Write to channel(id: %s) with message: %v", handler.GetId(), data)
+				// Record packet: perpetua -> NTQQ (outbound on ntqq link)
+				web.RecordNTQQPacket("outbound", data)
 				err := conn.WriteJSON(data)
 				if err != nil {
 					log.Errorf("[NTQQ<-] Channel(id: %s) write to NTQQ failed: %v", handler.GetId(), err)
@@ -116,6 +118,9 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 			global.Lifecycle = msgData
 			continue
 		}
+
+		// Record packet: NTQQ -> perpetua (inbound on ntqq link)
+		web.RecordNTQQPacket("inbound", msgData)
 
 		// msgData
 		uuid, err := globalCache.Append(msgData)
@@ -161,8 +166,8 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 		// when closed, staying dispatch
 		for _, v := range receivers {
 			handler := v.(*Handler)
-			// Record packet: NTQQ -> client
-			web.RecordPacket("ntqq->client", handler.GetId(), handler.GetName(), msgData)
+			// Record packet: perpetua -> client (outbound on client link)
+			web.RecordClientPacket("outbound", handler.GetId(), handler.GetName(), msgData)
 			handler.AddMessage(uuid)
 		}
 	}

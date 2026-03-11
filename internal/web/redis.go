@@ -18,9 +18,12 @@ var ctx = context.Background()
 type Packet struct {
 	ID         string                 `json:"id"`
 	Timestamp  int64                  `json:"timestamp"`
-	Direction  string                 `json:"direction"` // "ntqq->client" | "client->ntqq"
-	HandlerID  string                 `json:"handler_id"`
-	ClientName string                 `json:"client_name"`
+	// Link: "ntqq" (NTQQ <-> perpetua) or "client" (perpetua <-> client)
+	Link       string                 `json:"link"`
+	// Direction: "inbound" (toward perpetua) or "outbound" (from perpetua)
+	Direction  string                 `json:"direction"`
+	HandlerID  string                 `json:"handler_id,omitempty"`
+	ClientName string                 `json:"client_name,omitempty"`
 	Data       map[string]interface{} `json:"data"`
 }
 
