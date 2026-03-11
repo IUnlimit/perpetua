@@ -3,11 +3,13 @@ package web
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/logger"
+	webstatic "github.com/IUnlimit/perpetua/web"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
@@ -42,13 +44,20 @@ func StartWebServer() {
 	api.GET("/system", GetSystemInfo)
 	api.DELETE("/packets", DeletePackets)
 
-	// Serve static frontend files
-	engine.Static("/assets", "./web/assets")
-	engine.StaticFile("/", "./web/index.html")
-	engine.StaticFile("/favicon.ico", "./web/favicon.ico")
-	// Fallback for SPA-like routing
+	// Serve embedded static frontend files
+	staticFS, err := fs.Sub(webstatic.StaticFS, ".")
+	if err != nil {
+		log.Errorf("[Web] Failed to load embedded static files: %v", err)
+		return
+	}
+	engine.StaticFS("/static", http.FS(staticFS))
+
+	// Serve index.html for root and fallback
+	engine.GET("/", func(c *gin.Context) {
+		c.FileFromFS("index.html", http.FS(staticFS))
+	})
 	engine.NoRoute(func(c *gin.Context) {
-		c.File("./web/index.html")
+		c.FileFromFS("index.html", http.FS(staticFS))
 	})
 
 	log.Infof("[Web] Starting management dashboard on port: %d", port)
