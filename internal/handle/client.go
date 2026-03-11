@@ -8,6 +8,7 @@ import (
 	"github.com/IUnlimit/perpetua/internal/web"
 	"github.com/IUnlimit/perpetua/pkg/deepcopy"
 	"github.com/bytedance/gopkg/util/gopool"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -238,7 +239,10 @@ func addEchoThenServe(prefix string, c Client, messageSupplier func() ([]byte, e
 	log.Debugf("%s Update client(url-%s) message echo: %s", prefix, c.getUrl(), echo)
 
 	// Record packet: client -> perpetua (inbound on client link)
-	web.RecordClientPacket("inbound", handler.GetId(), handler.GetName(), msgData)
+	traceID := uuid.NewString()
+	web.RecordClientPacket(traceID, "inbound", handler.GetId(), handler.GetName(), msgData)
+	// Attach traceID for downstream ntqq outbound correlation
+	msgData["_trace_id"] = traceID
 
 	echoMap.JustPut(id, msgData)
 	echoMap.Receive <- true

@@ -42,6 +42,7 @@ func StartWebServer() {
 	api := engine.Group("/api/web")
 	api.GET("/connections", GetConnections)
 	api.GET("/packets", GetPackets)
+	api.GET("/packets/trace", GetPacketTrace)
 	api.GET("/system", GetSystemInfo)
 	api.DELETE("/packets", DeletePackets)
 

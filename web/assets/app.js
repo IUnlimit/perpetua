@@ -242,10 +242,75 @@ function showPacketDetail(packet) {
       <span class="detail-value" style="font-family:'SF Mono','Menlo','Consolas',monospace;font-size:12px">${packet.id}</span>
     </div>
     <div class="json-block">${syntaxHighlight(packet.data)}</div>
+    <div class="trace-section" id="traceSection">
+      <div class="trace-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        关联转发链路
+      </div>
+      <div class="trace-loading" id="traceLoading">加载中…</div>
+    </div>
   `;
 
   modal.classList.add('visible');
   document.body.style.overflow = 'hidden';
+
+  // Load trace data
+  loadTrace(packet.id);
+}
+
+async function loadTrace(packetId) {
+  const res = await api(`/packets/trace?id=${packetId}`);
+  const container = document.getElementById('traceSection');
+  const loading = document.getElementById('traceLoading');
+
+  if (!res || res.status !== 'ok' || !res.data.related || res.data.related.length <= 1) {
+    loading.textContent = '无关联数据包';
+    return;
+  }
+
+  const related = res.data.related;
+  loading.remove();
+
+  const items = related.map((p, i) => {
+    const isCurrent = p.id === packetId;
+    const dirIcon = p.direction === 'inbound' ? '↓' : '↑';
+    const linkLabel = p.link === 'ntqq' ? 'NTQQ' : '客户端';
+    const desc = describePacketFlow(p);
+    const timeStr = new Date(p.timestamp).toLocaleString('zh-CN');
+    const connector = i < related.length - 1
+      ? `<div class="trace-connector"><svg width="12" height="16" viewBox="0 0 12 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="6" y1="0" x2="6" y2="16"/><polyline points="3 12 6 16 9 12"/></svg></div>`
+      : '';
+
+    return `
+      <div class="trace-item ${isCurrent ? 'current' : ''}"
+           ${isCurrent ? '' : `onclick="jumpToPacket('${p.id}')"`}>
+        <div class="trace-dir ${p.direction}">${dirIcon}</div>
+        <div class="trace-info">
+          <div class="trace-info-top">
+            <span>${escapeHtml(desc)}</span>
+            <span class="trace-link-badge ${p.link}">${linkLabel}</span>
+          </div>
+          <div class="trace-info-sub">${timeStr}${p.client_name ? ' · ' + escapeHtml(p.client_name) : ''}</div>
+        </div>
+        ${isCurrent ? '<span style="font-size:11px;color:var(--accent);font-weight:500">当前</span>' : '<span class="trace-arrow">›</span>'}
+      </div>${connector}`;
+  }).join('');
+
+  container.innerHTML += `<div class="trace-list">${items}</div>`;
+}
+
+async function jumpToPacket(packetId) {
+  const res = await api(`/packets/trace?id=${packetId}`);
+  if (!res || res.status !== 'ok') return;
+  showPacketDetail(res.data.source);
+}
+
+function describePacketFlow(p) {
+  if (p.link === 'ntqq' && p.direction === 'inbound') return 'NTQQ → perpetua';
+  if (p.link === 'ntqq' && p.direction === 'outbound') return 'perpetua → NTQQ';
+  if (p.link === 'client' && p.direction === 'outbound') return 'perpetua → 客户端';
+  if (p.link === 'client' && p.direction === 'inbound') return '客户端 → perpetua';
+  return p.link + ' ' + p.direction;
 }
 
 function closeModal() {

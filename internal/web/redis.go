@@ -17,6 +17,7 @@ var ctx = context.Background()
 // Packet represents a captured data packet
 type Packet struct {
 	ID         string                 `json:"id"`
+	TraceID    string                 `json:"trace_id"`
 	Timestamp  int64                  `json:"timestamp"`
 	// Link: "ntqq" (NTQQ <-> perpetua) or "client" (perpetua <-> client)
 	Link       string                 `json:"link"`
@@ -83,6 +84,13 @@ func SavePacket(p *Packet) error {
 	})
 	pipe.Expire(ctx, "perpetua:all_packets", expire)
 
+	// Add to trace set for correlation
+	if p.TraceID != "" {
+		traceKey := fmt.Sprintf("perpetua:trace:%s", p.TraceID)
+		pipe.SAdd(ctx, traceKey, p.ID)
+		pipe.Expire(ctx, traceKey, expire)
+	}
+
 	_, err = pipe.Exec(ctx)
 	return err
 }
@@ -148,6 +156,65 @@ func getPacketsByIDs(ids []string, total int64) ([]*Packet, int64, error) {
 	}
 
 	return packets, total, nil
+}
+
+// GetPacketByID returns a single packet by ID
+func GetPacketByID(packetID string) (*Packet, error) {
+	key := fmt.Sprintf("perpetua:packet:%s", packetID)
+	data, err := rdb.Get(ctx, key).Result()
+	if err != nil {
+		return nil, err
+	}
+	var p Packet
+	if err := json.Unmarshal([]byte(data), &p); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// GetPacketsByTrace returns all packets sharing the same trace ID
+func GetPacketsByTrace(traceID string) ([]*Packet, error) {
+	traceKey := fmt.Sprintf("perpetua:trace:%s", traceID)
+	ids, err := rdb.SMembers(ctx, traceKey).Result()
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return []*Packet{}, nil
+	}
+
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = fmt.Sprintf("perpetua:packet:%s", id)
+	}
+
+	results, err := rdb.MGet(ctx, keys...).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	packets := make([]*Packet, 0, len(results))
+	for _, r := range results {
+		if r == nil {
+			continue
+		}
+		var p Packet
+		if err := json.Unmarshal([]byte(r.(string)), &p); err != nil {
+			continue
+		}
+		packets = append(packets, &p)
+	}
+
+	// Sort by timestamp
+	for i := 0; i < len(packets); i++ {
+		for j := i + 1; j < len(packets); j++ {
+			if packets[i].Timestamp > packets[j].Timestamp {
+				packets[i], packets[j] = packets[j], packets[i]
+			}
+		}
+	}
+
+	return packets, nil
 }
 
 // CleanupExpiredPackets removes expired packet references from sorted sets

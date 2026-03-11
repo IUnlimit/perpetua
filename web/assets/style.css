@@ -768,3 +768,133 @@ body {
 .stagger-3 { animation-delay: 0.15s; }
 .stagger-4 { animation-delay: 0.2s; }
 .stagger-5 { animation-delay: 0.25s; }
+
+/* ── Trace / Related Packets ── */
+.trace-section {
+  margin-top: 16px;
+}
+
+.trace-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trace-title svg {
+  flex-shrink: 0;
+}
+
+.trace-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--separator);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.trace-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.trace-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.trace-item.current {
+  background: var(--accent-soft);
+  cursor: default;
+}
+
+.trace-dir {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.trace-dir.inbound {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.trace-dir.outbound {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.trace-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.trace-info-top {
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trace-info-sub {
+  font-size: 11px;
+  color: var(--label-tertiary);
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trace-link-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.trace-link-badge.ntqq {
+  color: var(--teal);
+  background: var(--teal-soft);
+}
+
+.trace-link-badge.client {
+  color: var(--orange);
+  background: var(--orange-soft);
+}
+
+.trace-arrow {
+  color: var(--label-tertiary);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.trace-loading {
+  text-align: center;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--label-tertiary);
+}
+
+.trace-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+  background: var(--bg-primary);
+}
+
+.trace-connector svg {
+  color: var(--label-tertiary);
+}

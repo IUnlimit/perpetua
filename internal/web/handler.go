@@ -99,6 +99,70 @@ func GetSystemInfo(c *gin.Context) {
 	})
 }
 
+// GetPacketTrace returns all correlated packets for a given packet ID
+func GetPacketTrace(c *gin.Context) {
+	packetID := c.Query("id")
+	if packetID == "" {
+		c.JSON(http.StatusOK, model.Response{
+			Status:  "failed",
+			RetCode: -1,
+			Msg:     "missing 'id' parameter",
+		})
+		return
+	}
+
+	if rdb == nil {
+		c.JSON(http.StatusOK, model.Response{
+			Status:  "failed",
+			RetCode: -1,
+			Msg:     "Redis not initialized",
+		})
+		return
+	}
+
+	// Get the source packet to find its trace_id
+	source, err := GetPacketByID(packetID)
+	if err != nil {
+		c.JSON(http.StatusOK, model.Response{
+			Status:  "failed",
+			RetCode: -1,
+			Msg:     "packet not found",
+		})
+		return
+	}
+
+	if source.TraceID == "" {
+		c.JSON(http.StatusOK, model.Response{
+			Status:  "ok",
+			RetCode: 0,
+			Data: gin.H{
+				"source":  source,
+				"related": []*Packet{},
+			},
+		})
+		return
+	}
+
+	related, err := GetPacketsByTrace(source.TraceID)
+	if err != nil {
+		c.JSON(http.StatusOK, model.Response{
+			Status:  "failed",
+			RetCode: -1,
+			Msg:     err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, model.Response{
+		Status:  "ok",
+		RetCode: 0,
+		Data: gin.H{
+			"source":  source,
+			"related": related,
+		},
+	})
+}
+
 // DeletePackets deletes packets older than specified timestamp
 func DeletePackets(c *gin.Context) {
 	beforeStr := c.Query("before")
