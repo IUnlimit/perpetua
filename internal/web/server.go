@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"strings"
 
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/logger"
@@ -44,20 +45,36 @@ func StartWebServer() {
 	api.GET("/system", GetSystemInfo)
 	api.DELETE("/packets", DeletePackets)
 
-	// Serve embedded static frontend files
-	staticFS, err := fs.Sub(webstatic.StaticFS, ".")
+	// Mount embedded assets subdirectory at /assets
+	assetsFS, err := fs.Sub(webstatic.StaticFS, "assets")
 	if err != nil {
-		log.Errorf("[Web] Failed to load embedded static files: %v", err)
+		log.Errorf("[Web] Failed to load embedded assets: %v", err)
 		return
 	}
-	engine.StaticFS("/static", http.FS(staticFS))
+	engine.StaticFS("/assets", http.FS(assetsFS))
 
-	// Serve index.html for root and fallback
-	engine.GET("/", func(c *gin.Context) {
-		c.FileFromFS("index.html", http.FS(staticFS))
-	})
+	// Read index.html once from embed
+	indexHTML, err := webstatic.StaticFS.ReadFile("index.html")
+	if err != nil {
+		log.Errorf("[Web] Failed to read embedded index.html: %v", err)
+		return
+	}
+
+	serveIndex := func(c *gin.Context) {
+		c.Data(http.StatusOK, "text/html; charset=utf-8", indexHTML)
+	}
+
+	// Root route
+	engine.GET("/", serveIndex)
+
+	// Fallback: serve index.html for non-API, non-asset routes
 	engine.NoRoute(func(c *gin.Context) {
-		c.FileFromFS("index.html", http.FS(staticFS))
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/api/") || strings.HasPrefix(path, "/assets/") {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		serveIndex(c)
 	})
 
 	log.Infof("[Web] Starting management dashboard on port: %d", port)

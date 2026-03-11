@@ -85,7 +85,7 @@ redis:
 # Web 管理面板配置
 web:
   # 管理面板端口
-  port: 9090
+  port: 9190
   # 数据包记录过期时间
   packet-expire: 24h
   # 过期数据清理间隔
