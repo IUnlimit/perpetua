@@ -10,6 +10,8 @@ const PAGE_SIZE = 30;
 let currentLinkFilter = 'all';       // 'all' | 'ntqq' | 'client'
 let currentDirFilter = 'all';        // 'all' | 'inbound' | 'outbound'
 let currentHandlerFilter = '';
+let searchQuery = '';
+let searchDebounce = null;
 let currentPage = 0;
 let totalPackets = 0;
 let connections = [];
@@ -123,6 +125,38 @@ function setDirection(dir, el) {
   refreshPackets();
 }
 
+// ── Search ──
+function onSearchInput() {
+  const input = document.getElementById('searchInput');
+  const clear = document.getElementById('searchClear');
+  clear.style.display = input.value ? 'flex' : 'none';
+
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    searchQuery = input.value.trim().toLowerCase();
+    currentPage = 0;
+    refreshPackets();
+  }, 250);
+}
+
+function clearSearch() {
+  const input = document.getElementById('searchInput');
+  input.value = '';
+  document.getElementById('searchClear').style.display = 'none';
+  searchQuery = '';
+  currentPage = 0;
+  refreshPackets();
+}
+
+function matchesSearch(packet, query) {
+  if (!query) return true;
+  const json = JSON.stringify(packet.data).toLowerCase();
+  if (json.includes(query)) return true;
+  if (packet.client_name && packet.client_name.toLowerCase().includes(query)) return true;
+  if (packet.handler_id && packet.handler_id.toLowerCase().includes(query)) return true;
+  return false;
+}
+
 // ── Packets ──
 async function refreshPackets() {
   const offset = currentPage * PAGE_SIZE;
@@ -150,6 +184,10 @@ async function refreshPackets() {
   // Apply direction filter
   if (currentDirFilter !== 'all') {
     filtered = filtered.filter(p => p.direction === currentDirFilter);
+  }
+  // Apply search filter
+  if (searchQuery) {
+    filtered = filtered.filter(p => matchesSearch(p, searchQuery));
   }
 
   if (filtered.length === 0) {
