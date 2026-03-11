@@ -1,5 +1,5 @@
-VERSION ?= v0.2.7
-LDFLAGS = -ldflags "-X 'github.com/IUnlimit/perpetua/conf.Version=$(VERSION)' -s -w"
+VERSION ?= v0.3.0
+LDFLAGS = -ldflags "-X 'github.com/IUnlimit/perpetua/internal/conf.Version=$(VERSION)' -s -w"
 OUTPUT  = output
 
 # 编译适用于 Linux 的可执行文件
