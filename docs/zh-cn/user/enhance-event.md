@@ -29,7 +29,7 @@
 
 ## 分布式事件
 
-> 通知事件对应的 `post_type` 字段值为 `distributed`
+> 分布式事件对应的 `post_type` 字段值为 `distributed`
 
 ### 客户端广播
 

@@ -2,6 +2,8 @@
 
 `perpetua` 与 `nonebot` 间采用反向 websocket 链接的方式进行通信，您可参考以下配置进行服务间的连接（nonebot 安装启动不再赘述）
 
+> 关于反向 WebSocket 的详细说明请参考 [连接客户端 - 反向 WebSocket](zh-cn/user/connect-client.md?id=反向-websocket)
+
 ## nonebot 配置
 
 ```
@@ -19,14 +21,9 @@ SUPERUSERS=["765743073"]
 ## perpetua 配置
 
 ```yaml
-# 反向 websocket 相关配置
 reverse-web-socket:
-  # 是否开启功能
-  enabled: true
-  # 上报地址 - 与 nonebot 配置对应
-  url: 'ws://127.0.0.1:8800/onebot/v11/ws/'
-  # AccessToken
-  access-token: ''
+  - url: 'ws://127.0.0.1:8800/onebot/v11/ws/'
+    access-token: ''
 ```
 
 ## 连接标识

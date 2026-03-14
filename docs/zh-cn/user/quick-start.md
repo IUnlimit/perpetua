@@ -13,164 +13,38 @@ Windows 用户请使用 `powershell` 运行本项目，以避免直接运行 `ex
 ./perp.exe
 ```
 
-## 初始化
+> Windows 下可使用 `faststart` 参数跳过 shell 确认提示：`./perp.exe faststart`
 
-第一次运行程序，会自动获取最新 NTQQ 实现列表供您选择下载（目前仅为 `Lagrange.OneBot`），您需要选择符合您机器架构的构建版本（输入不同版本前`[]`内的数字）进行下载。
+## 基础配置
 
-> 注意：下载内容为 [Github Action](https://github.com/LagrangeDev/Lagrange.Core/actions/workflows/Lagrange.OneBot-build.yml) 构建的最新版本，可能存在需要代理才能访问的情况。您也可以手动下载并解压到 `./config/Lagrange.OneBot/` 路径下
-
-此阶段日志输出内容如下：
-
-<details>
-<summary><b>点击展开</b></summary>
-
-```text
-[PERP] [INFO] [2024-02-01 21:20:47]: Searching Lagrange.OneBot ...
-[PERP] [INFO] [2024-02-01 21:20:48]: Please choose the Lagrange.OneBot software suitable for your platform (send the number before option)
-[0] Lagrange.OneBot_win-x86
-[1] Lagrange.OneBot_win-x64
-[2] Lagrange.OneBot_osx-x64
-[3] Lagrange.OneBot_osx-arm64
-[4] Lagrange.OneBot_linux-x64
-[5] Lagrange.OneBot_linux-arm64
-[6] Lagrange.OneBot_linux-arm
-```
-
-</details>
-
-下载完成后，因为缺少 `appsettings.json`（Lagrange.OneBot 配置）文件，程序会自动生成初始配置文件并退出
-
-## Lagrange.OneBot 配置
-
-下为 `appsettings.json` 的默认配置，本文就关键内容给出注释说明
-
-<details>
-<summary><b>点击展开</b></summary>
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information"
-    }
-  },
-  // 验证服务器，必填项
-  "SignServerUrl": "",
-  "Account": {
-    // qq 账户，若不填则使用扫码登陆
-    "Uin": 0,
-    // qq 密码，若不填则使用扫码登陆
-    "Password": "",
-    // 协议类型，目前仅支持 Linux
-    "Protocol": "Linux",
-    "AutoReconnect": true,
-    "GetOptimumServer": true
-  },
-  "Message": {
-    "IgnoreSelf": true
-  },
-  // 连接配置
-  "Implementations": [
-    {
-      // 连接类型：正向 WebSocket 连接
-      // Perpetua 将自动读取使用第一个 ForwardWebSocket 连接配置
-      "Type": "ForwardWebSocket",
-      "Host": "127.0.0.1",
-      "Port": 5700,
-      "Suffix": "/onebot/v11/ws",
-      "ReconnectInterval": 5000,
-      "HeartBeatInterval": 5000,
-      "AccessToken": ""
-    }
-  ]
-}
-```
-
-</details>
-
-## 权限配置
-
-### Windows
-
-Windows 用户只需在程序启动时批准相关权限弹窗即可
-
-### Linux
-
-Linux 用户需要在运行前对 `./config/Lagrange.OneBot/` 路径下的 `Lagrange.OneBot` 可执行程序赋予运行权限
-
-```shell
-chmod +x ./config/Lagrange.OneBot/Lagrange.OneBot
-```
-
-## Perpetua 配置
-
-Perpetua 默认生产的配置即可满足绝大部分需求，其路径为 `./config/config.yml`。如果希望在发生bug时进行更详细的溯源，可以将日志等级调整为 `debug`。
-
-<details>
-<summary><b>点击展开</b></summary>
+Perpetua 的配置文件路径为 `./config/config.yml`，首次运行会自动生成。以下为基础配置项：
 
 ```yaml
-#	                                    __
-#	______   _________________   _____/  |_ __ _______
-#	\____ \_/ __ \_  __ \____ \_/ __ \   __\  |  \__  \
-#	|  |_> >  ___/|  | \/  |_> >  ___/|  | |  |  // __ \_
-#	|   __/ \___  >__|  |   __/ \___  >__| |____/(____  /
-#	|__|        \/      |__|        \/                \/
-#
-# Notice
-#   perpetua 固定连接第一个 ForwardWebSocket 配置项
-
 # 日志项配置
 log:
   # 是否每次启动新建log文件
   force-new: false
   # 日志等级
   #   trace debug info warn error
-  level: "info"
+  level: "debug"
   # 日志存活时间，到期新建log文件
   aging: 24h
   # 是否开启控制台颜色
   colorful: true
 
-# 本配置项自动更新，无需手动
-ntqq-impl:
-  update: false
-  id: 0
-  platform: ""
-  updated-at: "0001-01-01T00:00:00Z"
-
-# http 相关配置
-http:
-  # 监听端口
-  port: 8080
-
-# websocket 相关配置
-web-socket:
-  # ws监听最长等待时间
-  timeout: 15s
-  # 指定范围 [start, end] 内随机监听端口
-  range-port:
-    # 是否开启功能
-    enabled: false
-    # 起始端口
-    start: 8000
-    # 终止端口
-    end: 8010
-
 # 接收消息的最大缓存时间
 msg-expire-time: 30m
 ```
 
-</details>
+如果希望在发生 bug 时进行更详细的溯源，可以将日志等级调整为 `debug`。
 
-## 连接
+## 下一步
 
-1. 获取 ws 端口 
+Perpetua 作为中间件，需要分别配置上游（NTQQ 实现）和下游（用户客户端）的连接：
 
-    使用 `GET` 请求访问 [/get_ws_port](https://iunlimit.github.io/perpetua/#/zh-cn/user/enhance-api?id=get_ws_port)。Perpetua 采取动态端口的监听方式来避免端口冲突和配置文件过度耦合等问题，以提高服务的可伸缩性
+1. **[连接服务端](zh-cn/user/connect-server.md)** — 配置 Perpetua 与 NTQQ 实现（Lagrange.OneBot）的连接
+2. **[连接客户端](zh-cn/user/connect-client.md)** — 配置用户客户端如何接入 Perpetua
 
-2. 建立 WebSocket 连接
-
-    根据获取的端口，与 Perpetua 建立连接。目前仅支持通过 ['/' 接口](https://github.com/botuniverse/onebot-11/blob/master/communication/ws.md#-%E6%8E%A5%E5%8F%A3) 同时进行事件监听与 OneBot API 操作
+```
+NTQQ(Lagrange.OneBot) ←──上游──→ Perpetua ←──下游──→ 用户客户端
+```

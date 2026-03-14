@@ -1,11 +1,13 @@
 - 用户文档
   - [介绍](zh-cn/user/introduce.md)
   - [快速开始](zh-cn/user/quick-start.md)
+  - [连接服务端](zh-cn/user/connect-server.md)
+  - [连接客户端](zh-cn/user/connect-client.md)
   - [第三方支持 - nonebot](zh-cn/user/support-nonebot.md)
+  - [Web 管理面板](zh-cn/user/web-panel.md)
   - [拓展 API](zh-cn/user/enhance-api.md)
   - [拓展 Event](zh-cn/user/enhance-event.md)
   - [拓展数据类型](zh-cn/user/enhance-model.md)
-
 - 开发者文档
   - [SDK](zh-cn/dev/sdk.md)
   - [开发手册](zh-cn/dev/developer.md)

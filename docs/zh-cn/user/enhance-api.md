@@ -136,4 +136,102 @@ Perpetua 提供的 API 一共分为两种类型
 
 无
 
+## Web 管理面板 API
+
+Web 管理面板提供了一组 REST API 用于查看连接状态、数据包记录和链路追踪。这些 API 运行在独立端口上（默认 `9190`，可通过 `web.port` 配置）。
+
+> 管理面板 API 依赖 Redis 进行数据包持久化，请确保 Redis 配置正确
+
+### `get_connections` 获取所有活跃连接
+
+- uri: `/api/web/connections`
+- method: `GET`
+
+**参数**
+
+无
+
+**响应数据**
+
+响应内容为 JSON 数组，每个元素包含连接的详细信息（客户端ID、名称、连接类型等）
+
+### `get_packets` 查询数据包记录
+
+- uri: `/api/web/packets`
+- method: `GET`
+
+**参数**
+
+| 字段名          | 数据类型   | 默认值  | 说明                          |
+|--------------|--------|------|-----------------------------|
+| `handler_id` | string | -    | 按处理器ID过滤（可选）                |
+| `offset`     | number | `0`  | 分页偏移量                       |
+| `limit`      | number | `50` | 每页数量，最大 200                 |
+
+**响应数据**
+
+| 字段名       | 数据类型     | 说明       |
+|-----------|----------|----------|
+| `packets` | Packet[] | 数据包列表    |
+| `total`   | number   | 数据包总数    |
+| `offset`  | number   | 当前偏移量    |
+| `limit`   | number   | 当前每页数量   |
+
+### `get_packet_trace` 查询数据包链路追踪
+
+根据数据包ID查询关联的完整链路追踪，返回同一 trace_id 下的所有数据包
+
+- uri: `/api/web/packets/trace`
+- method: `GET`
+
+**参数**
+
+| 字段名  | 数据类型   | 默认值 | 说明    |
+|------|--------|-----|-------|
+| `id` | string | -   | 数据包ID |
+
+**响应数据**
+
+| 字段名       | 数据类型     | 说明              |
+|-----------|----------|-----------------|
+| `source`  | Packet   | 源数据包            |
+| `related` | Packet[] | 同一链路下的关联数据包列表   |
+
+### `get_system_info` 获取系统概览
+
+- uri: `/api/web/system`
+- method: `GET`
+
+**参数**
+
+无
+
+**响应数据**
+
+| 字段名                 | 数据类型   | 说明        |
+|---------------------|--------|-----------|
+| `connections_count` | number | 当前活跃连接数   |
+| `packets_count`     | number | 数据包记录总数   |
+| `lifecycle`         | object | 生命周期元数据   |
+| `heartbeat`         | object | 最近一次心跳数据  |
+
+### `delete_packets` 删除数据包记录
+
+删除指定时间戳之前的所有数据包记录
+
+- uri: `/api/web/packets`
+- method: `DELETE`
+
+**参数**
+
+| 字段名      | 数据类型   | 默认值 | 说明                |
+|----------|--------|-----|-------------------|
+| `before` | number | -   | Unix 时间戳（毫秒），删除此时间之前的数据包 |
+
+**响应数据**
+
+| 字段名       | 数据类型   | 说明       |
+|-----------|--------|----------|
+| `removed` | number | 删除的数据包数量 |
+
 <hr>
