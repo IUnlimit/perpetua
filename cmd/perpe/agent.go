@@ -5,6 +5,7 @@ import (
 
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/handle"
+	"github.com/IUnlimit/perpetua/internal/model"
 	"github.com/IUnlimit/perpetua/internal/web"
 	"github.com/bytedance/gopkg/util/gopool"
 	log "github.com/sirupsen/logrus"
@@ -72,6 +73,15 @@ func EnableAgent() {
 
 	for {
 		err := handle.CreateNTQQWebSocket()
+		// EXTERNAL: the upstream is managed by others, keep reconnecting until it comes back
+		if global.ImplType == model.EXTERNAL {
+			interval := global.Config.NTQQImpl.GetExternalReconnectInterval()
+			log.Warnf("[NTQQ] External NTQQ websocket disconnected(: %v), reconnecting in %s", err, interval)
+			time.Sleep(interval)
+			continue
+		}
+
+		// EMBED
 		if err != nil {
 			log.Errorf("Failed to connect to NTQQ websocket(: %v), will try again later", err)
 		}
