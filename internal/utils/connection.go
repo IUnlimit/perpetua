@@ -56,9 +56,9 @@ func WaitNTQQStartup(host string, port int, waitCallback func(error)) <-chan str
 }
 
 // WaitExternalNTQQStartup always wait for external NTQQ websocket connection to be enabled
-func WaitExternalNTQQStartup(ws string, connectCallback func(bool), waitCallback func(error)) <-chan struct{} {
+func WaitExternalNTQQStartup(ws string, accessToken string, connectCallback func(bool), waitCallback func(error)) <-chan struct{} {
 	return WaitCondition(time.Duration(1000), func() error {
-		err := CheckWebsocket(ws, time.Second*1)
+		err := CheckWebsocket(ws, accessToken, time.Second*1)
 		if err != nil {
 			return err
 		}

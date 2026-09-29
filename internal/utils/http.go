@@ -137,17 +137,57 @@ func CheckPort(host string, port int, timeout time.Duration) error {
 	return nil
 }
 
-func CheckWebsocket(ws string, timeout time.Duration) error {
-	dialer := websocket.Dialer{
-		HandshakeTimeout: timeout,
-	}
-
-	conn, _, err := dialer.Dial(ws, http.Header{})
+// CheckWebsocket checks whether the websocket endpoint accepts a handshake with the given access token
+func CheckWebsocket(ws string, accessToken string, timeout time.Duration) error {
+	conn, err := DialWebsocket(ws, accessToken, timeout)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 	return nil
+}
+
+// DialWebsocket dials a OneBot forward websocket, carrying the access token (if any) as a Bearer header.
+// Handshake failures are enriched with the HTTP status and response body so that auth/path problems
+// (e.g. SnowLuma's 401 Unauthorized / 400 Bad path) can be told apart.
+func DialWebsocket(wsUrl string, accessToken string, timeout time.Duration) (*websocket.Conn, error) {
+	dialer := websocket.Dialer{
+		Proxy:            http.ProxyFromEnvironment,
+		HandshakeTimeout: timeout,
+	}
+
+	header := http.Header{}
+	if len(accessToken) != 0 {
+		header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	}
+
+	conn, resp, err := dialer.Dial(wsUrl, header)
+	if err != nil {
+		return nil, describeHandshakeError(err, resp)
+	}
+	return conn, nil
+}
+
+// describeHandshakeError appends status code, body and a troubleshooting hint to a bad handshake error
+func describeHandshakeError(err error, resp *http.Response) error {
+	if !errors.Is(err, websocket.ErrBadHandshake) || resp == nil {
+		return err
+	}
+
+	var body string
+	if resp.Body != nil {
+		data, _ := io.ReadAll(io.LimitReader(resp.Body, 256))
+		body = strings.TrimSpace(string(data))
+	}
+
+	var hint string
+	switch resp.StatusCode {
+	case http.StatusUnauthorized, http.StatusForbidden:
+		hint = ", please check `external-access-token`"
+	case http.StatusBadRequest, http.StatusNotFound:
+		hint = ", please check the path of `external-web-socket` (SnowLuma default: /)"
+	}
+	return fmt.Errorf("%w (status: %s, body: %q%s)", err, resp.Status, body, hint)
 }
 
 // BadResponse Return error status code and error message

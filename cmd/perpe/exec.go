@@ -27,12 +27,20 @@ func Configure() {
 	// check impl type
 	lgrWS := config.NTQQImpl.ExternalWebSocket
 	if lgrWS != "" {
-		<-utils.WaitExternalNTQQStartup(lgrWS, func(alive bool) {
+		log.Info("Waiting for external NTQQ websocket: ", lgrWS)
+		lastErr := ""
+		<-utils.WaitExternalNTQQStartup(lgrWS, config.NTQQImpl.ExternalAccessToken, func(alive bool) {
 			if alive {
 				log.Info("External NTQQ connection successful: ", lgrWS)
 				global.ImplType = model.EXTERNAL
 			}
 		}, func(err2 error) {
+			// surface a new kind of error once, keep repeated ones at debug level to avoid flooding
+			if msg := err2.Error(); msg != lastErr {
+				lastErr = msg
+				log.Warnf("Wait External-NTQQ startup: %v", err2)
+				return
+			}
 			log.Debugf("Wait External-NTQQ startup: %v", err2)
 		})
 
