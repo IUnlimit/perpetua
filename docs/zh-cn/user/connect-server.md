@@ -133,6 +133,24 @@ ntqq-impl:
   external-web-socket: "ws://127.0.0.1:5700/onebot/v11/ws"
   # 外置 OneBot 实现的 AccessToken（可选）
   external-access-token: ""
+  # 外置实现连接中断后的重连间隔，默认 5s
+  external-reconnect-interval: 5s
 ```
 
 > 注意：`external-web-socket` 地址需与 OneBot 实现的 `ForwardWebSocket` 配置一致
+
+启动时 Perpetua 会持续等待外置实现可用；运行中若上游连接中断，将按 `external-reconnect-interval` 间隔自动重连，下游客户端连接保持不变，断线期间客户端发出的请求会在重连后补发。
+
+若握手失败，日志会给出 HTTP 状态码：`401/403` 表示 `external-access-token` 不匹配，`400/404` 表示 `external-web-socket` 路径不被接受。
+
+### 接入 SnowLuma
+
+[SnowLuma](https://github.com/SnowLuma/SnowLuma) 默认的正向 WebSocket（`ws-default`）监听 `127.0.0.1:3001`，路径为 `/`，并会自动生成 AccessToken（可在 SnowLuma WebUI 的 OneBot 连接配置中查看）：
+
+```yaml
+ntqq-impl:
+  external-web-socket: "ws://127.0.0.1:3001/"
+  external-access-token: "<SnowLuma WebUI 中 ws-default 的 AccessToken>"
+```
+
+> 路径需为 `/`（或 `/api`、`/event`），沿用 Lagrange 的 `/onebot/v11/ws` 会被拒绝。Perpetua 与 SnowLuma 不在同一网络命名空间（如 Docker 部署）时，需将 SnowLuma 的监听地址改为 `0.0.0.0`。
