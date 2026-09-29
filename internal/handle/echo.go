@@ -1,6 +1,8 @@
 package handle
 
 import (
+	"sync"
+
 	global "github.com/IUnlimit/perpetua/internal"
 	collections "github.com/chenjiandongx/go-queue"
 )
@@ -12,6 +14,7 @@ var echoMap *EchoMap
 type EchoMap struct {
 	Receive chan bool
 
+	mu      sync.Mutex
 	dataMap map[string]*collections.Queue
 }
 
@@ -24,21 +27,30 @@ func NewEchoMap() *EchoMap {
 
 // JustPut echo
 func (em *EchoMap) JustPut(id string, data global.MsgData) {
-	queue := echoMap.dataMap[id]
+	em.mu.Lock()
+	queue := em.dataMap[id]
 	if queue == nil {
 		queue = collections.NewQueue()
-		echoMap.dataMap[id] = queue
+		em.dataMap[id] = queue
 	}
+	em.mu.Unlock()
 	queue.Put(data)
 }
 
-func (em *EchoMap) JustGet(id string, consumer func(global.MsgData)) {
-	queue := echoMap.dataMap[id]
+// JustGet drains queued data of id.
+// canContinue is checked before taking each element, returning false stops draining and keeps the remaining data queued.
+func (em *EchoMap) JustGet(id string, canContinue func() bool, consumer func(global.MsgData)) {
+	em.mu.Lock()
+	queue := em.dataMap[id]
+	em.mu.Unlock()
 	if queue == nil {
 		return
 	}
 
 	for {
+		if canContinue != nil && !canContinue() {
+			return
+		}
 		e, ok := queue.Get()
 		if !ok {
 			return

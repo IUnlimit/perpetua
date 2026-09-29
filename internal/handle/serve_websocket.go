@@ -1,12 +1,11 @@
 package handle
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	global "github.com/IUnlimit/perpetua/internal"
 	"github.com/IUnlimit/perpetua/internal/model"
@@ -17,16 +16,50 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func CreateNTQQWebSocket() error {
-	var handle = NewHandler(context.Background())
-	handle.AddWait()
+// ntqqHandshakeTimeout websocket handshake timeout for the NTQQ upstream connection
+const ntqqHandshakeTimeout = 10 * time.Second
 
+// ntqqLink the lifecycle of one NTQQ upstream websocket connection
+type ntqqLink struct {
+	conn *websocket.Conn
+	done chan struct{}
+	once sync.Once
+}
+
+func newNTQQLink(conn *websocket.Conn) *ntqqLink {
+	return &ntqqLink{
+		conn: conn,
+		done: make(chan struct{}),
+	}
+}
+
+// stop closes the connection and notifies all goroutines bound to it, safe to call multiple times
+func (l *ntqqLink) stop() {
+	l.once.Do(func() {
+		close(l.done)
+		_ = l.conn.Close()
+	})
+}
+
+func (l *ntqqLink) closed() bool {
+	select {
+	case <-l.done:
+		return true
+	default:
+		return false
+	}
+}
+
+// CreateNTQQWebSocket connects to the NTQQ upstream and blocks until the connection is lost.
+// All goroutines bound to the connection have exited when it returns, so it's safe to call again to reconnect.
+func CreateNTQQWebSocket() error {
 	var wsUrl string
 	var accessToken string
 	if global.ImplType == model.EXTERNAL {
 		config := global.Config.NTQQImpl
 		wsUrl = config.ExternalWebSocket
 		accessToken = config.ExternalAccessToken
+		log.Info("[NTQQ] Start connecting to external NTQQ websocket: ", wsUrl)
 	} else { // EMBED
 		impl, err := utils.GetForwardImpl()
 		if err != nil {
@@ -41,80 +74,90 @@ func CreateNTQQWebSocket() error {
 		})
 	}
 
-	request, _ := http.NewRequest("GET", "", nil)
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, request.Header)
+	conn, err := utils.DialWebsocket(wsUrl, accessToken, ntqqHandshakeTimeout)
 	if err != nil {
 		return err
 	}
 	log.Info("[NTQQ] Websocket connection successful")
-	defer conn.Close()
+
+	link := newNTQQLink(conn)
+	writerExited := make(chan struct{})
 
 	// write to NTQQ
 	// NTQQ <- perp
 	gopool.Go(func() {
-		handle.AddWait()
-		write2NTQQLoop(handle, conn)
+		defer close(writerExited)
+		write2NTQQLoop(link)
 	})
 
 	// read from NTQQ
 	// NTQQ -> perp
-	err = readFromNTQQLoop(handle, conn)
-	if err != nil {
-		return err
-	}
-	return nil
+	err = readFromNTQQLoop(conn)
+	link.stop()
+	// make sure the writer bound to this connection has exited before reconnecting,
+	// otherwise it would steal requests and write them to the closed connection
+	<-writerExited
+	return err
 }
 
-func write2NTQQLoop(handle *Handler, conn *websocket.Conn) {
+func write2NTQQLoop(link *ntqqLink) {
+	// flush requests queued while the upstream was disconnected
+	flush2NTQQ(link)
 	for {
-		if handle.ShouldExit() {
+		select {
+		case <-link.done:
+			return
+		case <-echoMap.Receive:
+		}
+		if link.closed() {
+			// keep the data queued, the writer of next connection will flush it
 			return
 		}
-		<-echoMap.Receive
-		for _, v := range handleSet.Iterator() {
-			handler := v.(*Handler)
-			id := handler.GetId()
-			echoMap.JustGet(id, func(data global.MsgData) {
-				// TODO 断点续传,NTQQ重连尝试 echo赋值错误
-				log.Debugf("[NTQQ<-] Write to channel(id: %s) with message: %v", handler.GetId(), data)
-				// Extract and remove trace_id before sending to NTQQ
-				traceID, _ := data["_trace_id"].(string)
-				delete(data, "_trace_id")
-				// Record packet: perpetua -> NTQQ (outbound on ntqq link, same trace)
-				if traceID != "" {
-					web.RecordNTQQPacketWithTrace(traceID, "outbound", data)
-				} else {
-					web.RecordNTQQPacket("outbound", data)
-				}
-				err := conn.WriteJSON(data)
-				if err != nil {
-					log.Errorf("[NTQQ<-] Channel(id: %s) write to NTQQ failed: %v", handler.GetId(), err)
-					handle.WaitExitAll()
-				}
-			})
-		}
+		flush2NTQQ(link)
 	}
 }
 
-func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
-	for {
-		if handle.ShouldExit() {
-			return errors.New("exception interrupt")
-		}
+// flush2NTQQ writes all queued client requests to NTQQ
+func flush2NTQQ(link *ntqqLink) {
+	for _, v := range handleSet.Iterator() {
+		id := v.(*Handler).GetId()
+		echoMap.JustGet(id, func() bool {
+			return !link.closed()
+		}, func(data global.MsgData) {
+			// TODO 断点续传 echo赋值错误
+			log.Debugf("[NTQQ<-] Write to channel(id: %s) with message: %v", id, data)
+			// Extract and remove trace_id before sending to NTQQ
+			traceID, _ := data["_trace_id"].(string)
+			delete(data, "_trace_id")
+			// Record packet: perpetua -> NTQQ (outbound on ntqq link, same trace)
+			if traceID != "" {
+				web.RecordNTQQPacketWithTrace(traceID, "outbound", data)
+			} else {
+				web.RecordNTQQPacket("outbound", data)
+			}
+			err := link.conn.WriteJSON(data)
+			if err != nil {
+				log.Errorf("[NTQQ<-] Channel(id: %s) write to NTQQ failed: %v", id, err)
+				link.stop()
+			}
+		})
+	}
+}
 
+// readFromNTQQLoop dispatches NTQQ messages and only returns when the connection is broken.
+// Errors of a single message are logged and skipped without breaking the connection.
+func readFromNTQQLoop(conn *websocket.Conn) error {
+	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Errorf("[NTQQ->] Failed to read NTQQ message: %v", err)
-			handle.WaitExitAll()
-			continue
+			return fmt.Errorf("read from NTQQ: %w", err)
 		}
 
 		var msgData global.MsgData
 		err = json.Unmarshal(message, &msgData)
 		if err != nil {
 			log.Errorf("[NTQQ->] Failed to unmarshal NTQQ message: %s", string(message))
-			handle.WaitExitAll()
 			continue
 		}
 
@@ -133,13 +176,12 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 		uuid, err := globalCache.Append(msgData)
 		if err != nil {
 			log.Errorf("[NTQQ->] Failed to append global cache: %v", err)
-			handle.WaitExitAll()
 			continue
 		}
 
 		// broadcast message
 		receivers := make([]interface{}, 0)
-		echo := utils.GetDefault(msgData["echo"], "")
+		echo, _ := msgData["echo"].(string)
 		if len(echo) == 0 { // global
 			log.Debug("[NTQQ->] Received global NTQQ message: ", string(message))
 			receivers = append(receivers, handleSet.Iterator()...)
@@ -154,8 +196,7 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 				// ${EchoPrefix}#${uuid}#client-echo
 				matches := global.EchoRegx.FindStringSubmatch(echo)
 				if len(matches) != 4 {
-					log.Errorf("[NTQQ->] Unable to match handler's(id: %s) echo value: %s", id, echo)
-					handle.WaitExitAll()
+					log.Errorf("[NTQQ->] Unable to match handler's echo value: %s", echo)
 					continue
 				}
 				id = matches[2]
@@ -163,8 +204,8 @@ func readFromNTQQLoop(handle *Handler, conn *websocket.Conn) error {
 			}
 			handler := FindHandler(id)
 			if handler == nil {
-				log.Error("[NTQQ->] Unknown handler id: ", id)
-				handle.WaitExitAll()
+				// the client may have disconnected before the response arrived
+				log.Warn("[NTQQ->] Unknown handler id, response dropped: ", id)
 				continue
 			}
 			log.Debugf("[NTQQ->] Received NTQQ message: %s", msgData)
