@@ -23,11 +23,14 @@ log:
 ntqq-impl:
   # 外置 onebot-11 实现的正向 ws 地址
   # 手动指定 ntqq 实现的正向 ws 地址（docker 部署或连接到外置NTQQ实现时使用）
-  # 若检测不到，则自动开始加载内置 NTQQ 逻辑
+  # 配置后 perpetua 会持续等待该地址可用；留空则加载内置 NTQQ 逻辑
+  # 示例：Lagrange "ws://127.0.0.1:5700/onebot/v11/ws"，SnowLuma "ws://127.0.0.1:3001/"
   external-web-socket: "ws://127.0.0.1:5700/onebot/v11/ws"
-  # 外置 onebot-11 实现的 AccessToken
+  # 外置 onebot-11 实现的 AccessToken（SnowLuma 默认会生成 token，需与其 WebUI 中的配置一致）
   # 仅在配置了 external-web-socket 时生效
   external-access-token: ""
+  # 外置实现连接中断后的重连间隔（仅在配置了 external-web-socket 时生效）
+  external-reconnect-interval: 5s
   # 以下配置项除 enable 外自动更新，无需手动变动
   update:
     enable: false

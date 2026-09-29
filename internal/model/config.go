@@ -34,9 +34,22 @@ type Log struct {
 }
 
 type NTQQImpl struct {
-	ExternalWebSocket   string  `yaml:"external-web-socket,omitempty"`
-	ExternalAccessToken string  `yaml:"external-access-token,omitempty"`
-	Update              *Update `yaml:"update"`
+	ExternalWebSocket   string `yaml:"external-web-socket,omitempty"`
+	ExternalAccessToken string `yaml:"external-access-token,omitempty"`
+	// ExternalReconnectInterval interval to reconnect when the external upstream is disconnected
+	ExternalReconnectInterval time.Duration `yaml:"external-reconnect-interval,omitempty"`
+	Update                    *Update       `yaml:"update"`
+}
+
+// DefaultExternalReconnectInterval used when external-reconnect-interval is absent or invalid
+const DefaultExternalReconnectInterval = 5 * time.Second
+
+// GetExternalReconnectInterval returns the configured reconnect interval, falling back to the default
+func (n *NTQQImpl) GetExternalReconnectInterval() time.Duration {
+	if n == nil || n.ExternalReconnectInterval <= 0 {
+		return DefaultExternalReconnectInterval
+	}
+	return n.ExternalReconnectInterval
 }
 
 type Http struct {
